@@ -14,10 +14,16 @@ function storedDraft(): OnboardingDraft {
   return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null") as OnboardingDraft;
 }
 
+/** The prototype chip is "🔒 {name} · Never planned" split over two spans — match via the chip root. */
+async function expectNeverChip(name: string) {
+  const inner = await screen.findByText(name, { selector: ".ot-chip--never-name" });
+  expect(inner.closest(".ot-chip--never")!.textContent).toBe(`🔒 ${name} · Never planned`);
+}
+
 /** Reduced motion on: matchMedia exists in jsdom, so force matches=true. */
 beforeEach(() => {
   cleanup();
-  localStorage.clear();
+  window.localStorage.clear();
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
@@ -108,8 +114,7 @@ describe("step 2 — household", () => {
 
     // close & reopen the browser: same step, same data (§5.0 AC)
     cleanup();
-    await boot();
-    // resumed directly at step 2, welcome not re-shown
+    render(<OnboardingApp />);
     await screen.findByRole("heading", { name: "Your household" });
     expect((screen.getByLabelText(/Household name/) as HTMLInputElement).value).toBe("The Test Family");
     expect(screen.getByRole("button", { name: "Italian" }).getAttribute("aria-pressed")).toBe("true");
@@ -126,7 +131,7 @@ describe("step 3 — members: required fields, consent (PV01), child rules, SG01
     await openMemberSheet();
 
     fireEvent.click(screen.getByRole("button", { name: "Add member" }));
-    expect(await screen.findByRole("alert").textContent).toBe("Please enter a name.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Please enter a name.");
 
     fireEvent.change(screen.getByLabelText(/Display name/), { target: { value: "Ana" } });
     fireEvent.click(screen.getByRole("button", { name: "Add member" }));
@@ -142,7 +147,7 @@ describe("step 3 — members: required fields, consent (PV01), child rules, SG01
 
     fireEvent.click(screen.getByRole("button", { name: "Active" }));
     fireEvent.click(screen.getByRole("button", { name: "Add member" }));
-    await screen.findByText("home for 4 of 4 meals");
+    await screen.findByText(/home for 4 of 4 meals/);
     fireEvent.click(screen.getByRole("button", { name: "Continue to meals ›" }));
     await screen.findByRole("heading", { name: "Meals to plan" });
   });
@@ -176,8 +181,8 @@ describe("step 3 — members: required fields, consent (PV01), child rules, SG01
     fireEvent.click(within(add).getByRole("button", { name: "OK" }));
     fireEvent.click(screen.getByRole("button", { name: "Add member" }));
 
-    await screen.findByText("🔒 peanuts · Never planned");
-    expect(screen.getByText("🔒 cilantro · Never planned")).toBeTruthy();
+    await expectNeverChip("peanuts");
+    await expectNeverChip("cilantro");
 
     // withdraw: stored allergy data is deleted right away (PV01)
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
@@ -185,7 +190,7 @@ describe("step 3 — members: required fields, consent (PV01), child rules, SG01
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await new Promise((r) => setTimeout(r, 0));
-    expect(screen.queryByText("🔒 peanuts · Never planned")).toBeNull();
+    expect(document.querySelector(".ot-chip--never")).toBeNull();
     expect(storedDraft().members[0]!.allergies).toEqual([]);
   });
 
@@ -272,7 +277,7 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue ›" }));
     await screen.findByRole("heading", { name: /Review/ });
     expect(screen.queryByRole("heading", { name: /Where your family/ })).toBeNull();
-    expect(screen.getByText("Sources")).toBeTruthy(); // stepper shows the "soon" source dot
+    expect(within(screen.getByRole("navigation", { name: "Onboarding progress" })).getByText("Sources")).toBeTruthy(); // "soon" source dot
 
     // chips read "Never planned" and match stored allergies exactly (§5.0 AC)
     const stored = storedDraft().members[0]!.allergies;
@@ -305,12 +310,12 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     expect(screen.getByText(/Checking allergies against every recipe/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Finish setup ›" }));
-    await screen.findByText(/You're all set, The Test Family!/);
+    await screen.findByText(/You’re all set, The Test Family!/);
 
     // close & reopen the browser after finishing: still the saved state
     cleanup();
     render(<OnboardingApp />);
-    await screen.findByText(/You're all set, The Test Family!/);
+    await screen.findByText(/You’re all set, The Test Family!/);
   });
 
   it("resuming mid-review replays the plan stub in its finished state", async () => {
@@ -324,12 +329,12 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     d.meals = [{ memberId: "m1", breakfast: true, lunch: false, snack: false, secondSnack: false, dinner: true, packedLunch: "" }];
     d.consent = { allergies: { granted: true, at: "2026-10-16T00:00:00.000Z", policyVersion: "2026-10-16" } };
     d.firstPlanRequestedAt = "2026-10-16T00:00:00.000Z";
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 
     render(<OnboardingApp />);
     await screen.findByRole("heading", { name: /Review/ });
     await screen.findByRole("group", { name: "Approval card preview" }); // no animation needed on resume
-    expect(screen.getByText("🔒 peanuts · Never planned")).toBeTruthy();
+    await expectNeverChip("peanuts");
     expect(document.getElementById("stepnum")!.textContent).toBe("Step 6 of 6");
   });
 });

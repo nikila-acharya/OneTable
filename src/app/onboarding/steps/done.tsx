@@ -21,7 +21,7 @@ export function Done({
         <div className="ot-logo" aria-hidden="true" />
       </div>
       <h1 style={{ textAlign: "center" }}>
-        You're all set{name ? `, ${name}` : ""}! 🎉
+        You’re all set{name ? `, ${name}` : ""}! 🎉
       </h1>
       <p className="ot-sub" style={{ textAlign: "center" }}>
         Your household is saved. The Plan, Recipes, Groceries and Household tabs, the approval

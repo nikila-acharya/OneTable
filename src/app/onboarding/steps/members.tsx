@@ -130,7 +130,6 @@ function MemberCard({
 function ConsentGate({
   draft,
   update,
-  m,
   setM,
   type,
   icon,
@@ -140,7 +139,6 @@ function ConsentGate({
 }: {
   draft: OnboardingDraft;
   update: (d: OnboardingDraft) => void;
-  m: MemberDraft;
   setM: (patch: Partial<MemberDraft>) => void;
   type: ConsentType;
   icon: string;
@@ -326,7 +324,7 @@ function MemberSheet({
           </div>
         </OtField>
         <p className="ot-meta">
-          A little walk most days is "Low active". Most people are between "Sedentary" and "Active".
+          A little walk most days is “Low active”. Most people are between “Sedentary” and “Active”.
         </p>
 
         <div className={`ot-disclosure${moreOpen ? " ot-disclosure--open" : ""}`}>
@@ -364,7 +362,6 @@ function MemberSheet({
             <ConsentGate
               draft={draft}
               update={update}
-              m={m}
               setM={setM}
               type="allergies"
               icon="🥜"
@@ -413,7 +410,6 @@ function MemberSheet({
             <ConsentGate
               draft={draft}
               update={update}
-              m={m}
               setM={setM}
               type="conditions"
               icon="🩺"
@@ -454,7 +450,6 @@ function MemberSheet({
             <ConsentGate
               draft={draft}
               update={update}
-              m={m}
               setM={setM}
               type="measurements"
               icon="📏"
@@ -624,7 +619,7 @@ export function Members({
       <h1>Family members</h1>
       <p className="ot-sub">
         Everyone you want meals planned for. Name, birthday, sex and activity level are all
-        that's required — one screen each.
+        that’s required — one screen each.
       </p>
 
       {draft.members.map((m) => (

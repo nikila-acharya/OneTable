@@ -21,7 +21,7 @@ import {
   type OnboardingDraft,
 } from "../store";
 import { slotLabel, weeklyMealCount } from "./meals";
-import { activityLabel, conditionLabel, sexLabel } from "./members";
+import { activityLabel } from "./members";
 
 function nextMondayLabel(): string {
   const d = new Date();
@@ -108,14 +108,24 @@ export function Review({
 
   useEffect(() => {
     if (phase !== "progress") return;
+    const total = lines.length;
+    const finishPlan = () => {
+      setPhase("approval");
+      if (!draft.firstPlanRequestedAt) {
+        update({ ...draft, firstPlanRequestedAt: new Date().toISOString() });
+      }
+    };
     if (prefersReducedMotion()) {
-      setVisible(lines.length);
-      finish();
-      return;
+      // Resolve without animation (§16.6); async so nothing cascades the render.
+      const t = setTimeout(() => {
+        setVisible(total);
+        finishPlan();
+      }, 0);
+      return () => clearTimeout(t);
     }
-    if (visible >= lines.length) {
-      finish();
-      return;
+    if (visible >= total) {
+      const t = setTimeout(finishPlan, 200);
+      return () => clearTimeout(t);
     }
     timer.current = setTimeout(() => setVisible((v) => v + 1), 550);
     return () => {
@@ -123,13 +133,6 @@ export function Review({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, visible]);
-
-  function finish() {
-    setPhase("approval");
-    if (!draft.firstPlanRequestedAt) {
-      update({ ...draft, firstPlanRequestedAt: new Date().toISOString() });
-    }
-  }
 
   const startPlan = () => {
     setVisible(0);
@@ -195,7 +198,7 @@ export function Review({
 
       <ReviewSection title="Sources">
         <p className="ot-meta" style={{ margin: 0 }}>
-          None yet — we'll plan from our recipe starter library. You can add sources in the next
+          None yet — we’ll plan from our recipe starter library. You can add sources in the next
           version, any time from Household.
         </p>
       </ReviewSection>

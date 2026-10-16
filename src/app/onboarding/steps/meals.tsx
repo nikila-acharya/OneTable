@@ -61,8 +61,8 @@ export function Meals({
     <section aria-label="Meals to plan">
       <h1>Meals to plan</h1>
       <p className="ot-sub">
-        We start from who's home for what. Change anything — skipped meals are just meals we
-        don't plan, nothing more.
+        We start from who’s home for what. Change anything — skipped meals are just meals we
+        don’t plan, nothing more.
       </p>
 
       {rows.map(({ member, mm }) => {

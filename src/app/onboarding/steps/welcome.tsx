@@ -45,7 +45,7 @@ export function Welcome({
         <li><i aria-hidden="true" /><span><b>Nothing is shared with advertisers.</b></span></li>
       </ul>
       <p className="ot-consent-hero">
-        We'll ask permission for allergies and health details only at the moment you add them —
+        We’ll ask permission for allergies and health details only at the moment you add them —
         never before.
       </p>
       <div className="ot-primary">

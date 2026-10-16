@@ -25,7 +25,7 @@ import {
 } from "./store";
 
 beforeEach(() => {
-  localStorage.clear();
+  window.localStorage.clear();
 });
 
 describe("resume-on-close (§5.0 AC)", () => {
@@ -50,14 +50,14 @@ describe("resume-on-close (§5.0 AC)", () => {
   });
 
   it("ignores foreign schema versions and corrupt data", () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 99, step: 4 }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 99, step: 4 }));
     expect(loadDraft().step).toBe(1);
-    localStorage.setItem(STORAGE_KEY, "{not json");
+    window.localStorage.setItem(STORAGE_KEY, "{not json");
     expect(loadDraft().step).toBe(1);
   });
 
   it("fills defaults for fields added after a draft was saved", () => {
-    localStorage.setItem(
+    window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ version: 1, step: 2, household: { name: "X" } }),
     );
@@ -102,9 +102,10 @@ describe("members (PR01 required fields, derived age)", () => {
 
   it("under-18 detection", () => {
     const now = new Date(2026, 9, 16);
-    expect(isUnder18({ birthYear: 2015, birthMonth: 1 }, now)).toBe(true);
-    expect(isUnder18({ birthYear: 2008, birthMonth: 1 }, now)).toBe(true);
-    expect(isUnder18({ birthYear: 2008, birthMonth: 12 }, now)).toBe(false);
+    expect(isUnder18({ birthYear: 2015, birthMonth: 1 }, now)).toBe(true); // 11
+    expect(isUnder18({ birthYear: 2008, birthMonth: 1 }, now)).toBe(false); // 18
+    expect(isUnder18({ birthYear: 2008, birthMonth: 12 }, now)).toBe(true); // 17, birthday not reached
+    expect(isUnder18({ birthYear: 2007, birthMonth: 12 }, now)).toBe(false); // 18, birthday not reached
   });
 
   it("required fields only: name, birth month/year, sex, activity", () => {

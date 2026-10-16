@@ -347,19 +347,61 @@ export function loadDraft(): OnboardingDraft {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return newDraft();
-    const parsed = JSON.parse(raw) as OnboardingDraft;
-    if (parsed?.version !== 1) return newDraft();
-    return { ...newDraft(), ...parsed, household: { ...newDraft().household, ...parsed.household } };
+    return parseDraft(raw);
   } catch {
     return newDraft();
   }
+}
+
+function parseDraft(raw: string): OnboardingDraft {
+  const parsed = JSON.parse(raw) as OnboardingDraft;
+  if (parsed?.version !== 1) return newDraft();
+  return { ...newDraft(), ...parsed, household: { ...newDraft().household, ...parsed.household } };
+}
+
+/* ---- store subscription for React (useSyncExternalStore) ---- */
+
+const draftListeners = new Set<() => void>();
+let cacheRaw: string | null | undefined;
+let cacheDraft: OnboardingDraft | null = null;
+
+function notifyDraftListeners() {
+  for (const l of Array.from(draftListeners)) l();
+}
+
+export function subscribeDraft(onChange: () => void): () => void {
+  draftListeners.add(onChange);
+  if (typeof window !== "undefined") window.addEventListener("storage", onChange);
+  return () => {
+    draftListeners.delete(onChange);
+    if (typeof window !== "undefined") window.removeEventListener("storage", onChange);
+  };
+}
+
+/** Stable identity per stored value: required by useSyncExternalStore. */
+export function getDraftSnapshot(): OnboardingDraft {
+  if (typeof window === "undefined") return newDraft();
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (raw !== cacheRaw || !cacheDraft) {
+    cacheRaw = raw;
+    try {
+      cacheDraft = raw ? parseDraft(raw) : newDraft();
+    } catch {
+      cacheDraft = newDraft();
+    }
+  }
+  return cacheDraft;
 }
 
 /** Saved after every step so the User can stop and come back (§5.0). */
 export function saveDraft(draft: OnboardingDraft): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    const json = JSON.stringify(draft);
+    window.localStorage.setItem(STORAGE_KEY, json);
+    cacheRaw = json;
+    cacheDraft = draft;
+    notifyDraftListeners();
   } catch {
     /* storage full or blocked — the flow still works in-session */
   }
@@ -369,6 +411,9 @@ export function clearDraft(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(STORAGE_KEY);
+    cacheRaw = undefined;
+    cacheDraft = null;
+    notifyDraftListeners();
   } catch {
     /* ignore */
   }

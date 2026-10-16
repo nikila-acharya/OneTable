@@ -15,12 +15,14 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import "./onboarding.css";
 import {
   clearDraft,
-  loadDraft,
+  getDraftSnapshot,
+  newDraft,
   saveDraft,
+  subscribeDraft,
   syncMeals,
   type OnboardStep,
   type OnboardingDraft,
@@ -42,15 +44,19 @@ export const FLOW_STEPS: { n: OnboardStep | 5; label: string; title: string; soo
   { n: 6, label: "Review", title: "Review & first plan" },
 ];
 
+/** Stable server snapshot for useSyncExternalStore hydration (renders Welcome; storage is read on the client). */
+const SERVER_SNAPSHOT: OnboardingDraft = newDraft();
+
 export default function OnboardingApp() {
-  // SSR-safe: the draft is read from storage on mount so the resumed step and
-  // data render identically to the saved state (§5.0 resume AC).
-  const [draft, setDraft] = useState<OnboardingDraft | null>(null);
+  // SSR-safe: useSyncExternalStore renders the static SERVER_SNAPSHOT during
+  // hydration (matching the server HTML), then switches to the storage
+  // snapshot — the resumed step and data render exactly as saved (§5.0
+  // resume AC) without a cascading-render effect.
+  const draft = useSyncExternalStore(subscribeDraft, getDraftSnapshot, () => SERVER_SNAPSHOT);
   const [savedFlash, setSavedFlash] = useState(false);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setDraft(loadDraft());
     return () => {
       if (flashTimer.current) clearTimeout(flashTimer.current);
     };
@@ -62,11 +68,10 @@ export default function OnboardingApp() {
     flashTimer.current = setTimeout(() => setSavedFlash(false), 1200);
   }, []);
 
-  /** Write-through update: save to storage, then re-render. */
+  /** Write-through update: save to storage, subscribers re-render. */
   const update = useCallback(
     (next: OnboardingDraft) => {
       saveDraft(next);
-      setDraft(next);
       flashSaved();
     },
     [flashSaved],
@@ -74,7 +79,6 @@ export default function OnboardingApp() {
 
   const goTo = useCallback(
     (n: OnboardStep) => {
-      if (!draft) return;
       const next: OnboardingDraft = {
         ...draft,
         step: n,
@@ -91,7 +95,6 @@ export default function OnboardingApp() {
   );
 
   const goBack = useCallback(() => {
-    if (!draft) return;
     // Back from step 6 lands on Meals: step 5 has no screen until WP-2.7 (ADR 116).
     const order: OnboardStep[] = [1, 2, 3, 4, 6];
     const i = order.indexOf(draft.step);
@@ -100,26 +103,12 @@ export default function OnboardingApp() {
 
   const startOver = useCallback(() => {
     clearDraft();
-    setDraft(loadDraft()); // fresh draft
   }, []);
 
   /** Reopen the review screen from Done (prototype behaviour). */
   const reopenReview = useCallback(() => {
-    if (!draft) return;
     update({ ...draft, step: 6, finishedAt: null, firstPlanRequestedAt: null });
   }, [draft, update]);
-
-  if (!draft) {
-    return (
-      <main className="ot-flow" aria-busy="true">
-        <div className="ot-top">
-          <div className="ot-top__row">
-            <span className="ot-top__stepnum">OneTable</span>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   const finished = draft.finishedAt !== null;
   const meta = FLOW_STEPS.find((s) => s.n === (finished ? 6 : draft.step))!;
