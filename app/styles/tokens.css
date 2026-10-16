@@ -1,0 +1,76 @@
+/* OneTable design tokens — PRD §16.3 (TR-UI), style per §16.1/§16.2.
+ *
+ * Values are sampled by eye from the "Free Conscious Nutrition Mobile App UI
+ * Template" Figma file and are APPROXIMATE (PRD §16.3). They must be confirmed
+ * against Figma Dev Mode and recorded in an ADR (docs/decisions/) by the Lead
+ * before M1 screens are finalized. Do not change a token value here without
+ * updating the ADR.
+ *
+ * Known contrast risk: --primary (#93B1C0) with white button text is below
+ * WCAG 2.1 AA for 17px/500 labels (NF-3). §16.3 itself asks to check
+ * --primary-strong on white and darken if it fails. Left as-is for M0 so the
+ * palette matches design/prototype.html; the fix belongs to the Dev Mode pass.
+ *
+ * Imported by app/dev/components (WP-0.6 gallery). App screens import this
+ * file from the root layout (WP-0.1 scaffold).
+ */
+
+:root {
+  /* ---- Colors (PRD 16.3) ---- */
+  --primary: #93B1C0;        /* primary buttons, progress, active tab, links */
+  --primary-strong: #6F93A6; /* pressed/focus states, link text */
+  --sky: #CFE4EE;            /* breakfast + lunch bars, selected chips, consent panels */
+  --sand: #EEDFC7;           /* dinner bar, allergy "never planned" chips, highlights */
+  --stone: #EFEDE6;          /* cards, summaries, snack bar */
+  --peach: #F3D9C4;          /* logo inner ring, small accents */
+  --ink: #3F4448;            /* body text */
+  --ink-soft: #7B8287;       /* secondary text */
+  --line: #E3E1DA;           /* borders, dividers */
+  --ok: #5E9C7F;             /* "Passed safety checks" */
+  --warn: #C98B4B;           /* clinician-confirm notes */
+
+  /* Surfaces and soft status tints — sampled from design/prototype.html */
+  --bg: #FFFFFF;             /* screen background */
+  --canvas: #F5F5F5;         /* app shell behind phone/frame */
+  --on-primary: #FFFFFF;     /* text on primary buttons */
+  --ok-soft: #DCEEE5;        /* status chip "ok" background */
+  --ok-soft-ink: #2F6B4F;    /* text on --ok-soft (AA) */
+  --warn-soft: #FBF5EE;      /* note / flagged-row background */
+  --warn-soft-ink: #7A5426;  /* text on --sand status chips (AA) */
+  --clin-ink: #8A5A2B;       /* dashed clinician-confirm tag text (AA on white) */
+  --sand-line: #E2CFAE;      /* border used on locked/allergy sand chips */
+
+  /* ---- Type (PRD 16.3: Roboto 300/400/500/700) ---- */
+  --font-ui: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --text-title: 26px;    /* screen titles, light */
+  --text-section: 17px;  /* section headings, medium */
+  --text-body: 16px;     /* body 15–16 */
+  --text-body-sm: 15px;
+  --text-meta: 13px;     /* meta 12–13 */
+  --text-meta-sm: 12px;
+  --leading: 1.4;
+
+  /* ---- Radius (PRD 16.3: 10 controls / 18 cards / 22 sheet tops / 999 chips) ---- */
+  --radius: 10px;         /* controls (alias --radius-control) */
+  --radius-control: 10px;
+  --radius-card: 18px;
+  --radius-lg: 18px;      /* alias --radius-card */
+  --radius-sheet: 22px;   /* bottom sheet top corners */
+  --radius-chip: 999px;
+
+  /* ---- Elevation (sampled from design/prototype.html) ---- */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(63, 68, 72, 0.06);
+  --scrim: rgba(40, 44, 48, 0.45); /* bottom-sheet backdrop */
+
+  /* ---- Touch + focus (PRD 16.6, WCAG 2.1 AA / NF-3) ---- */
+  --touch-min: 44px;           /* minimum touch target */
+  --focus-ring: 2px solid var(--primary-strong);
+}
+
+/* Font loading note: screens should load Roboto 300/400/500/700 via
+ * next/font/google in the root layout (WP-0.1). The gallery page falls back
+ * to system-ui through --font-ui until then. */
