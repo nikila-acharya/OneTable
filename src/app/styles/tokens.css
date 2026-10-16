@@ -1,0 +1,23 @@
+/* OneTable design tokens — PRD §16.3 (TR-UI).
+ * WP-0.6 owns this file; WP-1.6 vendors a copy here so the onboarding
+ * screens render standalone until WP-0.6 lands. Values match PRD §16.3 exactly. */
+:root {
+  --primary: #93b1c0;        /* buttons, progress, active tab, links */
+  --primary-strong: #6f93a6; /* pressed / focus states */
+  --sky: #cfe4ee;            /* breakfast & lunch bars, selected chips, consent panels */
+  --sand: #eedfc7;           /* dinner bar, "never planned" chips, highlights */
+  --stone: #efede6;          /* cards, summaries, snack bar */
+  --peach: #f3d9c4;          /* logo inner ring, small accents */
+  --ink: #3f4448;            /* body text */
+  --ink-soft: #7b8287;       /* secondary text */
+  --line: #e3e1da;           /* borders, dividers */
+  --bg: #ffffff;
+  --canvas: #f5f5f5;
+  --ok: #5e9c7f;             /* passed safety checks */
+  --warn: #c98b4b;           /* clinician-confirm notes */
+  --radius: 10px;            /* controls */
+  --radius-lg: 18px;         /* cards */
+  --radius-sheet: 22px;      /* sheet tops */
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 14px rgb(63 68 72 / 0.06);
+  --font-body: var(--font-roboto), Roboto, system-ui, sans-serif;
+}
