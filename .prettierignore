@@ -1,0 +1,18 @@
+# build / tool output
+.next/
+out/
+build/
+coverage/
+node_modules/
+playwright-report/
+test-results/
+blob-report/
+
+# generated / vendored
+package-lock.json
+next-env.d.ts
+public/
+src/app/favicon.ico
+
+# documents are hand-edited; keep their formatting stable
+docs/
