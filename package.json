@@ -1,0 +1,21 @@
+{
+  "name": "onetable-wp14",
+  "private": true,
+  "version": 0,
+  "description": "WP-1.4 condition gate + clinician banner (SG01) — drop-in lib/, components/, rules/ and tests/ for the OneTable Next.js app",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
