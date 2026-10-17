@@ -77,10 +77,22 @@ planned` (text carries the meaning, color is decoration only — §16.6).
 
 ## Consequences
 
-- §16.7's Playwright visual snapshots at 390/1280 px and the axe-core sweep
-  are NOT covered here: vitest + testing-library pin structure/copy/ACs
-  (including an axe smoke pass on every screen), while browser-visual
-  snapshots are tracked as a follow-up card for the reviewer profile.
+- ~~§16.7's Playwright visual snapshots at 390/1280 px and the axe-core
+  sweep are NOT covered here~~ CLOSED by t_02ae1826: `playwright.config.ts` +
+  `e2e/` snapshot the six ON01 states (steps 1–4, 6, Done) at 390 px and
+  1280 px against the production build, seeded through the localStorage
+  resume path, and run axe-core in Chromium where colour-contrast is
+  actually computed. vitest + testing-library keep pinning
+  structure/copy/ACs.
+- The real-browser contrast sweep failed four PRD §16.3 TEXT tokens
+  (`--ink-soft`, `--primary-strong`, `--ok`, and white-on-`--primary`
+  button text). They are minimally darkened in `src/app/styles/tokens.css`
+  (hue/saturation preserved; lightness lowered only until AA 4.5:1 clears
+  against their worst real background) — a deliberate deviation from the
+  literal §16.3 palette in favour of the §16.7 "zero serious or critical"
+  acceptance criterion. WP-0.6 owns the token file and must ratify or
+  re-derive the palette; other WP branches vendoring the old values should
+  rebase onto these.
 - `store.ts` is the single place rules (required fields, consent scrub,
   child weight, age derivation, step gating) are encoded; WP-1.2/1.3
   server tools should import or mirror it, and WP-1.1's consent table wins

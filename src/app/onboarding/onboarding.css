@@ -77,7 +77,7 @@
   border-radius: 50%;
   background: var(--line);
 }
-.ot-dot--active > i { background: var(--primary); box-shadow: 0 0 0 4px rgb(147 177 192 / 0.25); }
+.ot-dot--active > i { background: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 25%, transparent); }
 .ot-dot--done > i { background: var(--primary-strong); }
 .ot-dot--soon > i { background: repeating-linear-gradient(45deg, var(--line), var(--line) 2px, var(--bg) 2px, var(--bg) 4px); }
 .ot-dot--done { color: var(--ink); }

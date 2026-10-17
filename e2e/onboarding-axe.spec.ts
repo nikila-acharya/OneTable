@@ -28,16 +28,28 @@ for (const s of SCREENS) {
 
     const results = await new AxeBuilder({ page }).analyze();
 
+    // Compact triage log (also lands in the HTML report for failing runs).
+    const digest = results.violations.map(
+      (v) => `${v.id} [${v.impact}] x${v.nodes.length}: ` + v.nodes.map((n) => n.target.join(" ")).join(" | "),
+    );
+    console.log(`[axe:${s.key}] ${digest.length ? digest.join("\n") : "clean"}`);
+
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(serious, JSON.stringify(serious, null, 2)).toEqual([]);
 
     // Contrast must be genuinely computed: appear in passes/violations and
-    // never land in "incomplete" (which is where jsdom hides).
+    // never be "undecidable". The only tolerated incomplete case is
+    // decorative non-text glyphs (✓ ticks etc., aria-hidden); anything the
+    // engine cannot resolve between real foreground/background colours is
+    // treated as a failure (that is exactly how a white-on-white bug hides).
     const evaluated = [...results.passes, ...results.violations, ...results.incomplete];
     const cc = evaluated.find((r) => r.id === "color-contrast");
     expect(cc, "color-contrast rule did not run").toBeTruthy();
-    const incompleteContrast = results.incomplete.filter((r) => r.id === "color-contrast");
-    expect(incompleteContrast, "color-contrast could not be decided").toEqual([]);
+    const undecidable = results.incomplete
+      .filter((r) => r.id === "color-contrast")
+      .flatMap((r) => r.nodes)
+      .filter((n) => !n.any.every((a) => (a.message ?? "").includes("only non-text characters")));
+    expect(undecidable, "color-contrast could not be decided").toEqual([]);
 
     // Any remaining non-serious violations are reported for visibility.
     if (results.violations.length > 0) {
