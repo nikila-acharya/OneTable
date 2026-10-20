@@ -39,10 +39,9 @@ describe('db/schema.ts constraint declarations (user table)', () => {
   });
 
   it('keeps member profiles free of auth fields (PV02: no credentials on member)', () => {
-    const start = schemaSource.indexOf("export const member = pgTable(");
-    expect(start).toBeGreaterThan(-1);
-    const end = schemaSource.indexOf("\n);\n", start);
-    const memberBlock = schemaSource.slice(start, end);
-    expect(memberBlock).not.toMatch(/password|email|passwordHash|session|token/i);
+    // Match up to the closing ");" line; \n) works for both LF and CRLF.
+    const m = schemaSource.match(/export const member = pgTable\([\s\S]*?\n\);/);
+    expect(m).not.toBeNull();
+    expect(m![0]).not.toMatch(/password|email|passwordHash|session|token/i);
   });
 });

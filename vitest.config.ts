@@ -11,6 +11,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // DB-touching suites share one database: run files one at a time so a
+    // suite's truncate/count assertions can't race another suite's writes.
+    fileParallelism: false,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
   },
