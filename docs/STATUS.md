@@ -19,7 +19,7 @@ Auto-dispatched kanban workers (gateway `kanban.dispatch_in_gateway`, now OFF vi
 | 0.2 DB/Drizzle/migrations/seed | t_04d2d776 | **done** — schema 33/33 = PRD 10.3; migrated live on Neon `onetable_dev`; seed NF-7 OK; 9 live-DB tests + 5 crypto pass |
 | 0.3 CI | t_89208e5b | todo — port `wp/0.3-ci`; needs push access |
 | 0.4 Auth + encryption | t_b97350d6 | todo — port `wp/0.4-auth` |
-| 0.5 Tool registry R/A/P/X | t_7e6a13e2 | todo — port `wp/0.5-tool-layer`; X-not-registered test is the gate |
+| 0.5 Tool registry R/A/P/X | t_7e6a13e2 | **done** — agent/ + tools ported; schema 0001 adds proposal_hash + agent_run.created_at (live on Neon); 50/50 tests incl X-not-registered gate |
 | 0.6 Tokens + components | t_41af9511 | todo — partial vendored copy in base; verify vs PRD 16.3 + prototype.html |
 | 1.1 Consent PV01 | t_ead0e1e4 | todo — port `wp/1.1-consent` |
 | 1.2 Member CRUD | t_6e55ed11 | todo — port `wp/1.2-member-crud` |

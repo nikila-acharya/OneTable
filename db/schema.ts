@@ -626,6 +626,7 @@ export const agentRun = pgTable(
     toolCalls: integer('tool_calls').notNull().default(0),
     tokens: integer('tokens').notNull().default(0),
     status: agentRunStatus('status').notNull().default('running'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     endedAt: timestamp('ended_at', { withTimezone: true }),
   },
@@ -700,6 +701,7 @@ export const approval = pgTable(
     runId: uuid('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
     tool: text('tool').notNull(),
     proposalJson: jsonb('proposal_json').$type<Record<string, unknown>>().notNull(),
+    proposalHash: text('proposal_hash').notNull(), // WP-0.5 integrity: sha256 of canonical proposal JSON
     status: approvalStatus('status').notNull().default('pending'),
     decidedAt: timestamp('decided_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
