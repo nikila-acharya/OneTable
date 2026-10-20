@@ -1,0 +1,5 @@
+# TEST FIXTURE — source without name (binding error: missing source.name).
+id: BAD-NO-NAME
+description: Rule citing a url only
+source:
+  url: https://example.org/nameless

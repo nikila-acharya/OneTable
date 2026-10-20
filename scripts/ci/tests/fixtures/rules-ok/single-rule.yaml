@@ -1,0 +1,12 @@
+# TEST FIXTURE — not a shipped clinical rule (used by check-rule-sources self-tests).
+id: SG02-no-deficit-under-18
+description: No calorie deficit or weight-loss target for members under 18
+applies_to: { age_lt: 18 }
+type: hard
+check: target.energy_kcal >= eer_maintenance(member)
+source:
+  name: American Academy of Pediatrics, Clinical Practice Guideline for Obesity (2023)
+  url: https://example.org/aap-2023-obesity
+confidence: Likely
+reviewed_by: null
+reviewed_on: null

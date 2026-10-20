@@ -1,0 +1,13 @@
+# TEST FIXTURE — envelope { rules: [...] } shape.
+rules:
+  - id: ENV-ONE
+    description: Fixture rule in an envelope
+    applies_to: {}
+    type: hard
+    check: x == x
+    source:
+      name: Fixture Source
+      url: https://example.org/env
+    confidence: Guessing
+    reviewed_by: null
+    reviewed_on: null

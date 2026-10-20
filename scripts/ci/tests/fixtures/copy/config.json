@@ -1,0 +1,6 @@
+{
+  "terms": ["treat", "cure", "guilt-free", "cheat meal", "burn off"],
+  "scopes": ["app"],
+  "fileExtensions": [".ts", ".tsx"],
+  "ignoreDirs": ["node_modules"]
+}

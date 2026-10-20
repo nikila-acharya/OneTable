@@ -1,0 +1,23 @@
+# TEST FIXTURE — top-level sequence shape.
+- id: ARR-ONE
+  description: Fixture rule one
+  applies_to: {}
+  type: soft
+  check: score >= 0
+  source:
+    name: Fixture Source
+    url: https://example.org/one
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null
+- id: ARR-TWO
+  description: Fixture rule two
+  applies_to: {}
+  type: banner
+  check: always
+  source:
+    name: Fixture Source
+    url: https://example.org/two
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null

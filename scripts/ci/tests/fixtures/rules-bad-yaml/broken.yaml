@@ -1,0 +1,4 @@
+# TEST FIXTURE — deliberately unparsable YAML (scanner must report, not crash).
+id: BROKEN
+description: "unclosed quote
+source: [

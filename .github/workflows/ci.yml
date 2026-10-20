@@ -1,0 +1,213 @@
+name: CI
+
+# OneTable CI — WP-0.3 (PRD 10.1 TR-STACK CI row; PRD 6.2, 6.4).
+# Jobs: safety checks (rule-source + banned-copy), lint, typecheck, unit, e2e.
+# Postgres service container matches the WP-0.2 docker-compose contract
+# (postgres:16-alpine, port 5432). The DB credentials here are CI-local throwaway
+# values; the same DATABASE_URL shape works locally and in CI.
+# Scaffold gating: lint/typecheck/unit/e2e are gated on the root package.json
+# existing. Until the WP-0.1 scaffold merges into main, those jobs pass with a
+# "scaffold not present" notice so CI is green on every branch from day one
+# (M0 exit: CI green on main). After the scaffold merges, this workflow runs
+# the real scripts with no edits needed:
+#   lint       -> npm run lint
+#   typecheck  -> npm run typecheck (fallback: npx tsc --noEmit)
+#   unit       -> npm run test:unit (fallback: npm run test)   [vitest]
+#   e2e        -> npm run test:e2e                              [playwright]
+#
+# Agent evals (TR-EVALS, PRD 7.6) join this pipeline in M4: a safety-eval set
+# on PRs here, plus the full set on a nightly schedule workflow.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safety-checks:
+    name: Rule-source + banned-copy (PRD 6.2, 6.4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/ci/package-lock.json
+      - name: Install CI tool deps
+        run: npm ci --prefix scripts/ci
+      - name: CI tool self-tests
+        run: npm test --prefix scripts/ci
+      - name: Rule-source check (PRD 6.2 — every rule cites source.name + source.url)
+        run: node scripts/ci/check-rule-sources.mjs
+      - name: Banned-copy check (PRD 6.4 — FDA general-wellness line)
+        run: node scripts/ci/check-banned-copy.mjs
+
+  lint:
+    name: Lint (ESLint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect app scaffold (WP-0.1)
+        id: scaffold
+        run: |
+          if [ -f package.json ]; then
+            echo present=true >>"$GITHUB_OUTPUT"
+          else
+            echo "::notice::No root package.json yet — lint activates when the WP-0.1 scaffold merges"
+          fi
+      - if: steps.scaffold.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.scaffold.outputs.present == 'true'
+        run: npm ci
+      - if: steps.scaffold.outputs.present == 'true'
+        run: npm run lint
+
+  typecheck:
+    name: Typecheck (tsc strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect app scaffold (WP-0.1)
+        id: scaffold
+        run: |
+          if [ -f package.json ]; then
+            echo present=true >>"$GITHUB_OUTPUT"
+          else
+            echo "::notice::No root package.json yet — typecheck activates when the WP-0.1 scaffold merges"
+          fi
+      - if: steps.scaffold.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.scaffold.outputs.present == 'true'
+        run: npm ci
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Typecheck
+        run: |
+          if node -e 'const s=JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts||{};process.exit(s.typecheck?0:1)'; then
+            npm run typecheck
+          elif [ -f tsconfig.json ]; then
+            npx --no-install tsc --noEmit
+          else
+            echo "::notice::No typecheck script or tsconfig.json — skipping"
+          fi
+
+  unit:
+    name: Unit tests (Vitest) + Postgres 16
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: onetable
+          POSTGRES_USER: onetable
+          POSTGRES_PASSWORD: ci_pg_temp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U onetable -d onetable"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://onetable:ci_pg_temp@localhost:5432/onetable
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect app scaffold (WP-0.1)
+        id: scaffold
+        run: |
+          if [ -f package.json ]; then
+            echo present=true >>"$GITHUB_OUTPUT"
+          else
+            echo "::notice::No root package.json yet — unit tests activate when the WP-0.1 scaffold merges"
+          fi
+      - if: steps.scaffold.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.scaffold.outputs.present == 'true'
+        run: npm ci
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Apply migrations (WP-0.2)
+        run: npm run db:migrate --if-present
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Run unit tests
+        run: |
+          if node -e 'const s=JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts||{};process.exit(s["test:unit"]?0:1)'; then
+            npm run test:unit
+          else
+            npm run test
+          fi
+
+  e2e:
+    name: End-to-end (Playwright) + Postgres 16
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: onetable
+          POSTGRES_USER: onetable
+          POSTGRES_PASSWORD: ci_pg_temp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U onetable -d onetable"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://onetable:ci_pg_temp@localhost:5432/onetable
+      AUTH_SECRET: ci-onl…cret
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect app scaffold (WP-0.1)
+        id: scaffold
+        run: |
+          if [ -f package.json ]; then
+            echo present=true >>"$GITHUB_OUTPUT"
+          else
+            echo "::notice::No root package.json yet — e2e activates when the WP-0.1 scaffold merges"
+          fi
+      - if: steps.scaffold.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.scaffold.outputs.present == 'true'
+        run: npm ci
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Apply migrations (WP-0.2)
+        run: npm run db:migrate --if-present
+      - if: steps.scaffold.outputs.present == 'true'
+        name: Run e2e tests
+        run: |
+          if node -e 'const s=JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts||{};process.exit(s["test:e2e"]?0:1)'; then
+            npm run test:e2e
+          else
+            echo "::notice::No test:e2e script yet — wire Playwright in the scaffold and rename, then this runs"
+          fi
+      - if: steps.scaffold.outputs.present == 'true' && always()
+        name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

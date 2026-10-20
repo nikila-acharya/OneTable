@@ -1,0 +1,5 @@
+# TEST FIXTURE — source is complete (gate passes) but advisory fields are missing.
+id: WARN-ONE
+source:
+  name: Fixture Source
+  url: https://example.org/w
