@@ -13,22 +13,22 @@
  *    drizzle/migrations/ (rule-source culture). Never `db:push` on Neon.
  */
 import {
-  pgTable,
-  pgEnum,
-  text,
-  integer,
-  smallint,
   boolean,
-  jsonb,
-  real,
-  numeric,
-  uuid,
-  timestamp,
-  date,
-  primaryKey,
-  index,
-  uniqueIndex,
   check,
+  date,
+  index,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  real,
+  smallint,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 /* ------------------------------------------------------------------ enums */
@@ -166,16 +166,63 @@ export const appUser = pgTable(
     householdId: uuid('household_id')
       .notNull()
       .references(() => household.id, { onDelete: 'cascade' }),
+    name: text('name'),
     email: text('email').notNull(),
-    // Auth.js credentials/magic-link fields land in WP-0.4; nullable for now.
+    // Auth.js expects the key `emailVerified`; DB column stays `email_verified_at`.
+    emailVerified: timestamp('email_verified_at', { withTimezone: true }),
+    image: text('image'),
+    /** scrypt envelope (lib/auth/password.ts). Nullable: magic-link-only users have NULL. */
     passwordHash: text('password_hash'),
-    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('user_email_key').on(t.email),
     uniqueIndex('user_one_per_household').on(t.householdId),
     index('user_household_idx').on(t.householdId),
+  ],
+);
+
+/** Auth.js provider links (magic link = provider 'nodemailer', password = 'credentials'). */
+export const accounts = pgTable(
+  'account',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => appUser.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    provider: text('provider').notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    refresh_token: text('refresh_token'),
+    access_token: text('access_token'),
+    expires_at: integer('expires_at'),
+    token_type: text('token_type'),
+    scope: text('scope'),
+    id_token: text('id_token'),
+    session_state: text('session_state'),
+  },
+  (t) => [index('account_user_id_idx').on(t.userId)],
+);
+
+/** Server-side sessions: sign-out is instant and PV03 deletion removes them with the user. */
+export const sessions = pgTable('session', {
+  sessionToken: text('session_token').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => appUser.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { withTimezone: true }).notNull(),
+});
+
+/** Magic-link tokens (Auth.js hashes the token before storing it). */
+export const verificationTokens = pgTable(
+  'verification_token',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.identifier, t.token], name: 'verification_token_identifier_token_key' }),
   ],
 );
 
@@ -763,6 +810,9 @@ import { type AnyPgColumn } from 'drizzle-orm/pg-core';
 export const schema = {
   household,
   appUser,
+  accounts,
+  sessions,
+  verificationTokens,
   consent,
   member,
   memberHealth,
