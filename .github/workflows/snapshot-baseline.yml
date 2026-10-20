@@ -1,0 +1,35 @@
+name: Snapshot baseline refresh (manual)
+
+# Regenerates Playwright visual baselines on the SAME platform CI uses
+# (ubuntu-latest + chromium), so committed baselines are comparable.
+# Trigger manually: gh workflow run snapshot-baseline.yml ; download the
+# `snapshots-linux` artifact; copy over e2e/*.snapshots dirs; commit.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regen:
+    name: Update snapshots (Linux/Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Production build
+        run: npm run build
+      - name: Update visual baselines
+        run: npm run test:e2e:snapshot:update
+      - name: Upload regenerated snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshots-linux
+          path: e2e/onboarding-snapshots.spec.ts-snapshots/
+          if-no-files-found: error
