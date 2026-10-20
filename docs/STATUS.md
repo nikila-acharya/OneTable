@@ -1,6 +1,6 @@
 # OneTable - Build Status
 
-Last updated: 2026-10-20 (late) - `main` = 0b1e0c5 (PR #6 WP-0.6 squash-merged)
+Last updated: 2026-10-20 (night) - `main` = 7d5aa4c (PR #8 WP-1.1 squash-merged)
 
 ## Verified state (CI green on each merge)
 - WP-0.1 scaffold, WP-0.3 CI + rule-source/banned-copy gates (PRs #3, #4)
@@ -8,6 +8,7 @@ Last updated: 2026-10-20 (late) - `main` = 0b1e0c5 (PR #6 WP-0.6 squash-merged)
 - WP-0.4 Auth.js v5 magic-link + credentials, one User per household, scrypt passwords, AES-256-GCM helper (PR #5)
 - WP-0.5 tool registry R/A/P/X + X-not-registered gate
 - WP-1.6 onboarding steps 1-4+6 UI (30 tests, axe AA, visual snapshots)
+- WP-1.1 consent (PV01/NF-P3): append-only log with trigger, gated writes, withdraw-deletes-in-request, PV03 erasure seam (PR #8)
 - WP-0.6 design tokens + base components (card, status chip, segmented, meal bar, tab bar), token contrast enforced by test (ADR-003), /dev/components gallery (PR #6)
 - Last verified: typecheck 0 errors; lint 0 errors (6 unused-var warnings in test helpers); vitest 15/15 files incl live DB; ci-scripts 16/16; next build OK; Playwright e2e green in CI.
 
