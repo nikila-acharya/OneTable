@@ -196,6 +196,9 @@ jobs:
         name: Apply migrations (WP-0.2)
         run: npm run db:migrate --if-present
       - if: steps.scaffold.outputs.present == 'true'
+        name: Production build (webServer runs next start)
+        run: npm run build
+      - if: steps.scaffold.outputs.present == 'true'
         name: Run e2e tests
         run: |
           if node -e 'const s=JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts||{};process.exit(s["test:e2e"]?0:1)'; then
