@@ -15,6 +15,13 @@
       "when": 1792515345391,
       "tag": "0001_lonely_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792525258435,
+      "tag": "0002_wp04_auth",
+      "breakpoints": true
     }
   ]
 }
