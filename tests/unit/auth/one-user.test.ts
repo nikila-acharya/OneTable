@@ -24,10 +24,11 @@ describe('assertSingleUserPerHousehold', () => {
 });
 
 describe('db/schema.ts constraint declarations (user table)', () => {
+  // db/schema.ts is CRLF on Windows; normalise so \n-based slicing is portable.
   const schemaSource = readFileSync(
     resolve(process.cwd(), 'db', 'schema.ts'),
     'utf8',
-  );
+  ).replace(/\r\n/g, '\n');
 
   it('has a UNIQUE index on user.household_id (one login per household)', () => {
     expect(schemaSource).toMatch(/uniqueIndex\(['"]user_one_per_household['"]\)\.on\(t\.householdId\)/);

@@ -1,0 +1,124 @@
+/* WP-0.6 base component styles (PRD 16.3 tokens, 16.6 accessibility). */
+
+.ot-card {
+  background: var(--stone);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+.ot-card--white { background: var(--bg); }
+.ot-card--sky { background: var(--sky); }
+.ot-card--sand { background: var(--sand); }
+.ot-card__title { font-size: 17px; font-weight: 500; margin: 0 0 8px; }
+
+.ot-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: var(--stone);
+  color: var(--ink);
+}
+.ot-status__glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--ink-soft);
+}
+.ot-status--ok .ot-status__glyph { background: var(--ok); }
+.ot-status--warn { background: var(--sand); }
+.ot-status--warn .ot-status__glyph { background: var(--warn); }
+.ot-status--info { background: var(--sky); }
+.ot-status--info .ot-status__glyph { background: var(--primary-strong); }
+
+.ot-seg {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: var(--radius);
+  background: var(--stone);
+}
+.ot-seg__opt {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.ot-seg__opt--on { background: var(--bg); box-shadow: var(--shadow); font-weight: 500; }
+.ot-seg__opt:focus-visible,
+.ot-tabbar__tab:focus-visible {
+  outline: 3px solid var(--primary-strong);
+  outline-offset: 2px;
+}
+
+.ot-mealbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-size: 15px;
+}
+.ot-mealbar--breakfast, .ot-mealbar--lunch { background: var(--sky); }
+.ot-mealbar--dinner { background: var(--sand); }
+.ot-mealbar--snack { background: var(--stone); }
+.ot-mealbar__label { font-weight: 500; }
+.ot-mealbar__body { font-size: 13px; color: var(--ink); }
+
+/* Clinician-confirm note (PRD 5.2/16.5). Text stays --ink on the sand panel;
+   --warn is only the accent border, so no warn-coloured text sits on a tint. */
+.ot-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--sand);
+  color: var(--ink);
+  font-size: 14px;
+  border-left: 4px solid var(--warn);
+}
+.ot-note--warn { border-left-color: var(--warn); }
+
+.ot-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  z-index: 10;
+}
+.ot-tabbar ul {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ot-tabbar__tab {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ot-tabbar__tab--on { color: var(--primary-strong); font-weight: 500; box-shadow: inset 0 3px 0 var(--primary); }
