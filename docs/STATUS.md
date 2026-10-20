@@ -16,7 +16,7 @@ Auto-dispatched kanban workers (gateway `kanban.dispatch_in_gateway`, now OFF vi
 | WP | Task | Status |
 |---|---|---|
 | 0.1 Repo scaffold | t_23f59f98 | **done** (verified) |
-| 0.2 DB/Drizzle/migrations/seed | t_04d2d776 | todo — port from `wp/0.2-db` (33 tables claimed, unverified vs PRD 10.3); needs Neon URL |
+| 0.2 DB/Drizzle/migrations/seed | t_04d2d776 | **done** — schema 33/33 = PRD 10.3; migrated live on Neon `onetable_dev`; seed NF-7 OK; 9 live-DB tests + 5 crypto pass |
 | 0.3 CI | t_89208e5b | todo — port `wp/0.3-ci`; needs push access |
 | 0.4 Auth + encryption | t_b97350d6 | todo — port `wp/0.4-auth` |
 | 0.5 Tool registry R/A/P/X | t_7e6a13e2 | todo — port `wp/0.5-tool-layer`; X-not-registered test is the gate |
@@ -29,8 +29,8 @@ Auto-dispatched kanban workers (gateway `kanban.dispatch_in_gateway`, now OFF vi
 | 1.6 Onboarding UI | t_6486cb4c | open — draft verified, held by parents 1.4/1.5 |
 
 ## Blocked on owner (13.3)
-1. **Neon**: create free project → paste `DATABASE_URL` into `C:\Hermes Projects\OneTable\.env.local` (never in chat), then tell me.
-2. **GitHub write access**: add `nacharya0531` as write collaborator on `nikila-acharya/OneTable` (or confirm you want me to work local-only until launch).
+1. ~~Neon~~ DONE. Dev DB `onetable_dev` created inside Neon project; ENCRYPTION_KEY (dev) generated locally.
+2. ~~GitHub write access~~ GRANTED (push verified pending first push below).
 3. Remote branch cleanup on `origin` (4 stray worker branches) once access is settled.
 
 ## Standing decisions
