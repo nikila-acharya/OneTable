@@ -1,0 +1,32 @@
+/* OneTable design tokens — PRD §16.3 (TR-UI).
+ * WP-0.6 owns this file; WP-1.6 vendors a copy here so the onboarding
+ * screens render standalone until WP-0.6 lands.
+ *
+ * t_02ae1826 EXCEPTION (§16.7 "axe-core reports zero serious or critical
+ * issues on onboarding"): with colour-contrast actually computed in a real
+ * browser, four TEXT tokens from PRD §16.3 failed WCAG AA. They are minimally
+ * darkened below — hue/saturation preserved, lightness only lowered until
+ * 4.5:1 clears against their worst real background (--stone/#efede6 or
+ * white). --primary is decorative elsewhere (progress bars, dots) but shares
+ * the token with white-on-colour button text, so it darkens too. Deviation
+ * documented in docs/decisions/116 + flagged to WP-0.6 (owns this file). */
+:root {
+  --primary: #547b8f;        /* buttons, progress, active tab, links — AA: white text on #93b1c0 was 2.26:1 */
+  --primary-strong: #507081; /* pressed / focus + soft accent text — AA vs white/stone (#6f93a6 was 3.28:1) */
+  --sky: #cfe4ee;            /* breakfast & lunch bars, selected chips, consent panels */
+  --sand: #eedfc7;           /* dinner bar, "never planned" chips, highlights */
+  --stone: #efede6;          /* cards, summaries, snack bar */
+  --peach: #f3d9c4;          /* logo inner ring, small accents */
+  --ink: #3f4448;            /* body text */
+  --ink-soft: #666c70;       /* secondary text — AA vs stone (#7b8287 was 3.33:1) */
+  --line: #e3e1da;           /* borders, dividers */
+  --bg: #ffffff;
+  --canvas: #f5f5f5;
+  --ok: #46745f;             /* passed safety checks — AA vs stone (#5e9c7f was 2.74:1) */
+  --warn: #c98b4b;           /* clinician-confirm notes */
+  --radius: 10px;            /* controls */
+  --radius-lg: 18px;         /* cards */
+  --radius-sheet: 22px;      /* sheet tops */
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 14px rgb(63 68 72 / 0.06);
+  --font-body: var(--font-roboto), Roboto, system-ui, sans-serif;
+}

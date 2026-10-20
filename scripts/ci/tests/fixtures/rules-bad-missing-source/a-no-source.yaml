@@ -1,0 +1,5 @@
+# TEST FIXTURE — a rule with no source at all (binding error: missing source).
+id: BAD-NO-SOURCE
+description: Rule without a source block
+type: hard
+check: whatever

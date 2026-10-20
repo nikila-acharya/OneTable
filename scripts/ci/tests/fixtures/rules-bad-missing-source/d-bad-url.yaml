@@ -1,0 +1,6 @@
+# TEST FIXTURE — non-http source url (binding error: not a valid http(s) URL).
+id: BAD-URL-SCHEME
+description: Rule with an ftp citation
+source:
+  name: Fixture Source
+  url: ftp://example.org/old-citation

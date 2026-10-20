@@ -1,0 +1,47 @@
+{
+  "$comment": "Banned UI-copy terms \u2014 WP-0.3 (PRD 6.4 FDA general-wellness line; PRD 7.3 diet-culture terms). The M4 Safety Guardian message guard imports this same file. Adding or removing terms requires owner approval (PRD 13.3). Terms are matched case-insensitively at word boundaries; single words also match a plain plural.",
+  "terms": [
+    {
+      "term": "manage your diabetes",
+      "note": "PRD 6.4 \u2014 disease-management claim"
+    },
+    {
+      "term": "treat",
+      "note": "PRD 6.4 \u2014 claim to treat a condition"
+    },
+    {
+      "term": "cure",
+      "note": "PRD 6.4 \u2014 claim to cure a condition"
+    },
+    {
+      "term": "guilt-free",
+      "note": "PRD 7.3 \u2014 diet-culture term"
+    },
+    {
+      "term": "cheat meal",
+      "note": "PRD 7.3 \u2014 diet-culture term"
+    },
+    {
+      "term": "burn off",
+      "note": "PRD 7.3 \u2014 diet-culture phrase"
+    }
+  ],
+  "scopes": [
+    "src/app",
+    "src/components",
+    "src/lib"
+  ],
+  "fileExtensions": [
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx"
+  ],
+  "ignoreDirs": [
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "coverage"
+  ]
+}

@@ -1,0 +1,5 @@
+# TEST FIXTURE — source without url (binding error: missing source.url).
+id: BAD-NO-URL
+description: Rule citing a source name only
+source:
+  name: Fixture Source
