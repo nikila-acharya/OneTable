@@ -67,6 +67,9 @@ async function newMember(db: Db, householdId: string) {
 describe.skipIf(!hasDb)("WP-1.1 consent (live DB)", () => {
   let db: Db;
   beforeAll(() => {
+    // Health blobs need ENCRYPTION_KEY. CI's unit job does not set one, so the
+    // test process gets a throwaway random key (not a secret; app config unchanged).
+    if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
     db = openDb().db;
   });
   afterAll(async () => {
