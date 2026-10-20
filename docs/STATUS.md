@@ -8,12 +8,13 @@ Last updated: 2026-10-20 (evening) - `main` = 3997fd8 (PR #5 WP-0.4 squash-merge
 - WP-0.4 Auth.js v5 magic-link + credentials, one User per household, scrypt passwords, AES-256-GCM helper (PR #5)
 - WP-0.5 tool registry R/A/P/X + X-not-registered gate
 - WP-1.6 onboarding steps 1-4+6 UI (30 tests, axe AA, visual snapshots)
+- WP-0.6 (in review): token contrast enforced by test (ADR-003), base components (card, status chip, segmented, meal bar, tab bar), /dev/components gallery
 - Last verified: typecheck 0 errors; lint 0 errors (6 unused-var warnings in test helpers); vitest 15/15 files incl live DB; ci-scripts 16/16; next build OK; Playwright e2e green in CI.
 
 ## Outstanding
 | WP | Task | Note |
 |---|---|---|
-| 0.6 | t_41af9511 | Full component set vs PRD 16.3 + design/prototype.html; token ADR |
+| 0.6 | t_41af9511 | IN REVIEW - PR for build/wp-0.6-tokens; Figma Dev Mode check still owed (ADR-003) |
 | 1.1 Consent PV01 | t_ead0e1e4 | port wp/1.1-consent onto main (consent-gated writes) |
 | 1.2 Member CRUD | t_6e55ed11 | port wp/1.2-member-crud |
 | 1.3 Health enums/crypto | t_59eb60f2 | port wp/1.3-health; consume lib/crypto/encryption.ts |

@@ -23,7 +23,8 @@
   --bg: #ffffff;
   --canvas: #f5f5f5;
   --ok: #46745f;             /* passed safety checks — AA vs stone (#5e9c7f was 2.74:1) */
-  --warn: #c98b4b;           /* clinician-confirm notes */
+  --warn: #8e5d2b;           /* clinician-confirm notes (TEXT) - AA: 4.78:1 on stone, 5.6:1 on white (was #c98b4b, 2.46:1) */
+  --warn-soft: #c98b4b;      /* PRD 16.3 original: decorative only, never for text */
   --radius: 10px;            /* controls */
   --radius-lg: 18px;         /* cards */
   --radius-sheet: 22px;      /* sheet tops */
