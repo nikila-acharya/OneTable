@@ -17,6 +17,7 @@ import { writeHealth } from "../health/service";
 import { grantConsent } from "../consent/service";
 import { mapActivity, mapConsentType, mapDiet, mapSex } from "./mapping";
 import { MEMBER_LIMIT, type Tier } from "../tier/limits";
+import { validateSettings, saveHouseholdSettings, type SettingsInput } from "../household/settings";
 
 export class OnboardingRejectedError extends Error {
   readonly code = "onboarding_rejected" as const;
@@ -47,6 +48,15 @@ export async function completeOnboarding(
   if (!hh) throw new OnboardingRejectedError(["household not found"]);
   const limit = MEMBER_LIMIT[hh.tier as Tier];
   if (draft.members.length > limit) issues.push(`this plan includes ${limit} members`);
+
+  const settingsInput: SettingsInput = {
+    weekdayBreakfastMinutes: draft.household.weekdayBreakfastMinutes,
+    weeknightDinnerMinutes: draft.household.weeknightDinnerMinutes,
+    cuisines: draft.household.cuisines,
+    budgetFeel: draft.household.budgetFeel,
+  };
+  const settingsCheck = validateSettings(settingsInput);
+  if (!settingsCheck.ok) issues.push(...settingsCheck.issues);
 
   const consentGranted = new Set(
     (Object.entries(draft.consent) as [ConsentTypeUi, { granted: boolean }][])
@@ -97,6 +107,9 @@ export async function completeOnboarding(
 
   // 2. Household details that the backend stores (name, timezone).
   await db.update(household).set({ name: draft.household.name.trim() || undefined, timezone: draft.household.timezone }).where(eq(household.id, householdId));
+
+  // 2b. Household cooking preferences (validated above).
+  await saveHouseholdSettings(db, householdId, settingsInput);
 
   // 3. Consent first, so the health writes below are allowed.
   let consents = 0;
