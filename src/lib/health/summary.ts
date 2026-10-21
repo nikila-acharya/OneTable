@@ -6,7 +6,7 @@
  */
 import type { Db } from "../db";
 import { getMember } from "../members/service";
-import { GENERAL_GUIDANCE_CONDITIONS, GLUTEN_HARD_FILTER_CONDITION, type Condition } from "./enums";
+import { evaluateConditionGate } from "../conditions/gate";
 import { readHealth } from "./service";
 
 export interface MemberSummary {
@@ -18,14 +18,13 @@ export interface MemberSummary {
 export async function getMemberSummary(db: Db, householdId: string, memberId: string): Promise<MemberSummary> {
   const profile = await getMember(db, householdId, memberId);
   const health = await readHealth(db, householdId, memberId);
+  const gate = evaluateConditionGate(memberId, health.conditions);
   const flags: string[] = [];
   if (profile.isChild) flags.push("under_18");
   for (const a of health.allergies) flags.push(`allergy:${a.replace(/ /g, "_")}`);
   if (health.otherAllergens.length > 0) flags.push("allergy:other_listed");
-  if (health.conditions.some((c) => c === GLUTEN_HARD_FILTER_CONDITION)) flags.push("hard_filter:gluten");
+  if (gate.glutenHardFilter) flags.push("hard_filter:gluten");
   if (health.conditions.length > 0) flags.push("has_listed_condition");
-  if (health.conditions.some((c) => GENERAL_GUIDANCE_CONDITIONS.has(c as Condition))) {
-    flags.push("general_guidance_mode", "clinician_confirm_banner");
-  }
+  if (gate.mode === "general_guidance") flags.push("general_guidance_mode", "clinician_confirm_banner");
   return { memberId, isChild: profile.isChild, flags: [...new Set(flags)].sort() };
 }
