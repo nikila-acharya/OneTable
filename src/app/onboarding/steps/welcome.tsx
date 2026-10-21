@@ -75,26 +75,30 @@ export function Welcome({
           <p className="ot-sub" style={{ marginBottom: 8 }}>
             Create the login for your household. Only this login can see your plan.
           </p>
-          <label style={{ display: "block", marginBottom: 8 }}>
-            Email
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4 }}
-            />
-          </label>
-          <label style={{ display: "block", marginBottom: 8 }}>
-            Password (at least 10 characters)
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4 }}
-            />
-          </label>
+          <div className="ot-field">
+            <label>
+              Email
+              <input
+                className="ot-input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="ot-field">
+            <label>
+              Password (at least 10 characters)
+              <input
+                className="ot-input"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+          </div>
           {error ? (
             <p role="alert" className="ot-sub" style={{ color: "var(--warn)", marginBottom: 8 }}>
               {error}
