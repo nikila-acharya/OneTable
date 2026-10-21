@@ -94,8 +94,9 @@ describe.skipIf(!hasDb)("WP-1.3 health (live DB)", () => {
       "hard_filter:gluten",
       "has_listed_condition",
     ]));
-    const json = JSON.stringify(s);
-    expect(json).not.toMatch(/171|68|type 2 diabetes|celiac/);
+    // The member id is random and can contain any digits, so check everything except the id.
+    const rest = { flags: s.flags, isChild: s.isChild };
+    expect(JSON.stringify(rest)).not.toMatch(/171|68|type 2 diabetes|celiac/);
     expect(Object.keys(s).sort()).toEqual(["flags", "isChild", "memberId"]);
   });
 
