@@ -1,6 +1,6 @@
 # ADR 006 - Health data and the member summary (WP-1.3, PR02 / PR03 / SG01 / NF-P1 / NF-P5)
 
-Date: 2026-10-20 - Status: accepted; one gap needs owner sign-off (below)
+Date: 2026-10-20 - Status: accepted. Owner DISAPPROVED the registry fix for ADR-006-G1 (2026-10-21); the gap is accepted as-is (see G1 decision)
 Relates to: ADR-004 (consent gate), ADR-005 (members), PRD 5.2, 6.3 SG-C, 7.2, 9
 
 ## Decisions
@@ -19,3 +19,9 @@ Also: heightCm/weightKg are typed as plain number in the tool schema because the
 - Uncertain allergen flags and confirmations (PR02, WP-3.x).
 - The onboarding UI sex and activity values differ from the backend enums (UI: female/male/prefer-not, low-active/very-active; backend: male/female/other/unspecified, light/moderate/high/athlete). Mapping belongs to WP-1.6 and must be decided before onboarding writes to the backend.
 - Consent-gated health writes from the onboarding UI (WP-1.6).
+
+## G1 decision (owner, 2026-10-21): fix disapproved
+The owner rejected extending `validateInput` in agent/tools/registry.ts. The shared tool-contract code stays unchanged. Consequences, accepted:
+- Item enums and union types are enforced only on apply, by the domain validators. An off-list allergen or condition can be approved, then refused on apply with `tool_error`, and nothing is written (tested).
+- The household can approve a card that cannot apply. This is a usability cost, not a safety one: no unvalidated health value is ever stored.
+- Any future change to the registry needs a fresh owner decision.
