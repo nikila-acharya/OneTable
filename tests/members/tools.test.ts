@@ -154,6 +154,8 @@ describe.skipIf(!hasDb)("member tools via the registry (live DB)", () => {
     expect(summary.ok).toBe(true);
     const s = summary.ok ? (summary as unknown as { result: { flags: string[] } }).result : null;
     expect(s?.flags).toContain("allergy:peanuts");
-    expect(JSON.stringify(s)).not.toMatch(/120/);
+    // Flags only: no measurement keys, no numeric height anywhere (the member id is random, so match keys/values, not digits).
+    expect(Object.keys(s ?? {}).sort()).toEqual(["flags", "isChild", "memberId"]);
+    expect(JSON.stringify(s)).not.toMatch(/heightCm|:\s*120\b/);
   });
 });
