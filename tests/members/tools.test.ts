@@ -13,6 +13,7 @@ import { ToolRegistry } from "../../agent/tools/registry";
 import { InMemoryApprovalStore } from "../../agent/tools/approvals";
 import { InMemoryActionLog } from "../../agent/tools/action-log";
 import { memberToolImplementations } from "../../src/lib/members/tools";
+import { grantConsent } from "../../src/lib/consent/service";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
 const NOW = new Date("2026-10-20T12:00:00Z");
@@ -34,11 +35,12 @@ function makeRegistry(db: Db, store: InMemoryApprovalStore) {
 }
 
 describe("member tool levels", () => {
-  it("both member tools are P-level (PRD 7.2)", () => {
+  it("write tools are P-level and the summary is R-level (PRD 7.2)", () => {
     const tools = memberToolImplementations({} as Db, () => NOW);
     expect(tools.map((t) => [t.name, t.level])).toEqual([
       ["create_or_update_member", "P"],
       ["set_attendance", "P"],
+      ["get_member_summary", "R"],
     ]);
   });
 });
@@ -46,6 +48,8 @@ describe("member tool levels", () => {
 describe.skipIf(!hasDb)("member tools via the registry (live DB)", () => {
   let db: Db;
   beforeAll(() => {
+    // Health blobs need ENCRYPTION_KEY; CI's unit job has none, so use a throwaway test key.
+    if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
     db = openDb().db;
   });
   afterAll(async () => {
@@ -103,15 +107,57 @@ describe.skipIf(!hasDb)("member tools via the registry (live DB)", () => {
     expect(await db.select().from(member).where(eq(member.householdId, hh))).toHaveLength(0);
   });
 
-  it("a credential or health field is refused at the schema, before any approval is created", async () => {
+  it("a credential is refused at the schema; an off-list allergen is refused on apply (gap, ADR-006)", async () => {
     const hh = await newHousehold();
     const store = new InMemoryApprovalStore();
     const registry = makeRegistry(db, store);
     const ctx = { runId: "run-3", householdId: hh };
     const withEmail = await registry.call("setup", "create_or_update_member", { ...input, email: "x@y.z" }, ctx);
     expect(!withEmail.ok && withEmail.error).toBe("invalid_input");
-    const withAllergy = await registry.call("setup", "create_or_update_member", { ...input, allergies: ["peanuts"] }, ctx);
-    expect(!withAllergy.ok && withAllergy.error).toBe("invalid_input");
+    // Known gap (ADR-005/006): the registry checks only top-level types, not
+    // item enums, so this proposal IS created; the domain check refuses it on apply.
+    const withBadAllergen = await registry.call("setup", "create_or_update_member", { ...input, allergies: ["peanut"] }, ctx);
+    expect(withBadAllergen.ok && withBadAllergen.outcome).toBe("approval_requested");
+    await approve(store, (withBadAllergen as { approvalId: string }).approvalId);
+    const refused = await registry.call("setup", "create_or_update_member", { ...input, allergies: ["peanut"], approvalId: (withBadAllergen as { approvalId: string }).approvalId }, ctx);
+    expect(!refused.ok && refused.error).toBe("tool_error");
     expect(await db.select().from(member).where(eq(member.householdId, hh))).toHaveLength(0);
+  });
+
+  it("allergies without consent: approved but the apply is refused, and nothing is stored", async () => {
+    const hh = await newHousehold();
+    const store = new InMemoryApprovalStore();
+    const registry = makeRegistry(db, store);
+    const ctx = { runId: "run-4", householdId: hh };
+    const withAllergy = { ...input, allergies: ["peanuts"] };
+    const proposed = await registry.call("setup", "create_or_update_member", withAllergy, ctx);
+    expect(proposed.ok && proposed.outcome).toBe("approval_requested");
+    const approvalId = (proposed as { approvalId: string }).approvalId;
+    await approve(store, approvalId);
+    const applied = await registry.call("setup", "create_or_update_member", { ...withAllergy, approvalId }, ctx);
+    expect(applied.ok).toBe(false);
+    expect(!applied.ok && applied.error).toBe("tool_error");
+    expect(await db.select().from(member).where(eq(member.householdId, hh))).toHaveLength(0);
+  });
+
+  it("with consent, the approved profile and allergies are stored and the summary shows flags only", async () => {
+    const hh = await newHousehold();
+    await grantConsent(db, hh, "allergies");
+    await grantConsent(db, hh, "body_measurements"); // height needs its own consent (PV01)
+    const store = new InMemoryApprovalStore();
+    const registry = makeRegistry(db, store);
+    const ctx = { runId: "run-5", householdId: hh };
+    const withAllergy = { ...input, allergies: ["peanuts"], heightCm: 120 };
+    const proposed = await registry.call("setup", "create_or_update_member", withAllergy, ctx);
+    const approvalId = (proposed as { approvalId: string }).approvalId;
+    await approve(store, approvalId);
+    const applied = await registry.call("setup", "create_or_update_member", { ...withAllergy, approvalId }, ctx);
+    expect(applied.ok && applied.outcome).toBe("executed");
+    const [row] = await db.select().from(member).where(eq(member.householdId, hh));
+    const summary = await registry.call("setup", "get_member_summary", { memberId: row!.id }, ctx);
+    expect(summary.ok).toBe(true);
+    const s = summary.ok ? (summary as unknown as { result: { flags: string[] } }).result : null;
+    expect(s?.flags).toContain("allergy:peanuts");
+    expect(JSON.stringify(s)).not.toMatch(/120/);
   });
 });

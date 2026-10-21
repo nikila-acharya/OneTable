@@ -1,11 +1,18 @@
 /**
- * Setup-agent tools for member profiles (PRD 7.2: create_or_update_member and
- * set_attendance are P-level). The registry runs the approval step; these
- * handlers only run after an approved proposal, so they re-validate here too.
+ * Setup-agent tools for member profiles (PRD 7.2). create_or_update_member and
+ * set_attendance are P-level: the registry stores a proposal and writes nothing
+ * until the household approves it. get_member_summary is R-level (flags only).
+ * Handlers re-validate on apply and check consent BEFORE any write.
  */
 import type { ToolImplementation, ToolRegistry } from "../../../agent/tools/registry";
 import type { Db } from "../db";
-import { createMember, setAttendance, updateMember, type AttendanceEntry } from "./service";
+import { guardProfileWrite } from "../consent/gate";
+import { validateHealthPatch, HEALTH_KEYS } from "../health/validation";
+import { writeHealth } from "../health/service";
+import { getMemberSummary } from "../health/summary";
+import { ALLERGENS, CONDITIONS } from "../health/enums";
+import { deriveAgeYears } from "./age";
+import { createMember, getMember, setAttendance, updateMember, type AttendanceEntry } from "./service";
 import { validateProfile, type NormalizedProfile } from "./validation";
 import { ACTIVITY_LEVELS, DIET_PATTERNS, SEXES } from "./types";
 
@@ -25,6 +32,12 @@ const PROFILE_SCHEMA = {
     dietPattern: { type: "string", enum: [...DIET_PATTERNS] },
     likes: TAG_SCHEMA,
     dislikes: TAG_SCHEMA,
+    // Health (WP-1.3): consent is checked on apply, and values are stored encrypted.
+    heightCm: { type: "number", minimum: 50, maximum: 250 }, // registry checks one type string; domain validation allows clearing
+    weightKg: { type: "number", minimum: 2, maximum: 400 },
+    conditions: { type: "array", uniqueItems: true, items: { type: "string", enum: [...CONDITIONS] } },
+    allergies: { type: "array", uniqueItems: true, items: { type: "string", enum: [...ALLERGENS] } },
+    otherAllergens: { type: "array", maxItems: 20, items: { type: "string", minLength: 1, maxLength: 40 } },
   },
   required: [],
 } as unknown as JsonSchema;
@@ -68,14 +81,38 @@ export function memberToolImplementations(db: Db, now: () => Date = () => new Da
     jsonSchema: PROFILE_SCHEMA,
     async handler(input, call) {
       const memberId = typeof input.memberId === "string" ? input.memberId : undefined;
-      const v = validateProfile(input, memberId ? "update" : "create", now());
-      if (!v.ok) throw new ProfileRejectedError(v.issues);
-      if (memberId) {
-        await updateMember(db, call.householdId, memberId, v.value, now());
-        return { result: { memberId, action: "updated" } };
+      const profileInput: Record<string, unknown> = {};
+      const healthInput: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(input)) {
+        if ((HEALTH_KEYS as readonly string[]).includes(k)) healthInput[k] = v;
+        else profileInput[k] = v;
       }
-      const id = await createMember(db, call.householdId, v.value as Required<NormalizedProfile> & NormalizedProfile, now());
-      return { result: { memberId: id, action: "created" } };
+
+      const profile = validateProfile(profileInput, memberId ? "update" : "create", now());
+      if (!profile.ok) throw new ProfileRejectedError(profile.issues);
+
+      // Age drives the under-13 weight rule: from the new birth month, or the stored member.
+      const birthYm =
+        profile.value.birthYm ?? (memberId ? (await getMember(db, call.householdId, memberId)).birthYm : undefined);
+      const ageYears = birthYm ? deriveAgeYears(birthYm, now()) : 0;
+      const health = validateHealthPatch(healthInput, ageYears);
+      if (!health.ok) throw new ProfileRejectedError(health.issues);
+
+      // PV01: consent is checked BEFORE any write, so a refused request stores nothing.
+      await guardProfileWrite(db, call.householdId, health.value as Record<string, unknown>);
+
+      let id: string;
+      let action: "created" | "updated";
+      if (memberId) {
+        await updateMember(db, call.householdId, memberId, profile.value, now());
+        id = memberId;
+        action = "updated";
+      } else {
+        id = await createMember(db, call.householdId, profile.value as Required<NormalizedProfile> & NormalizedProfile, now());
+        action = "created";
+      }
+      if (Object.keys(health.value).length > 0) await writeHealth(db, call.householdId, id, health.value);
+      return { result: { memberId: id, action, healthFieldsStored: Object.keys(health.value) } };
     },
   };
 
@@ -96,13 +133,26 @@ export function memberToolImplementations(db: Db, now: () => Date = () => new Da
     },
   };
 
-  return [createOrUpdate, attendance];
+  const summary: ToolImplementation = {
+    name: "get_member_summary",
+    level: "R",
+    jsonSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: { memberId: { type: "string" } },
+      required: ["memberId"],
+    } as unknown as JsonSchema,
+    async handler(input, call) {
+      return { result: await getMemberSummary(db, call.householdId, input.memberId as string) };
+    },
+  };
+
+  return [createOrUpdate, attendance, summary];
 }
 
 /**
- * Register both member tools for the setup agent (roster: agent/roster.ts).
- * Uses per-tool register(): registerAgent() would require the setup agent's
- * whole roster, and the other setup tools land in later work packages.
+ * Register the member tools for the setup agent (roster: agent/roster.ts).
+ * Per-tool register(): registerAgent() would require the whole setup roster.
  */
 export function registerMemberTools(registry: ToolRegistry, db: Db, now?: () => Date): void {
   for (const impl of memberToolImplementations(db, now)) registry.register("setup", impl);

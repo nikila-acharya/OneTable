@@ -82,8 +82,8 @@ suite('WP-0.2 migrations + seed (live DB)', () => {
       await db.select().from(memberHealth).where(eq(memberHealth.memberId, sam.id))
     )[0]!;
     const health = decryptHealth(blob.dataEnc, loadKey());
-    expect(health.allergies).toEqual(expect.arrayContaining(['peanut', 'tree_nut']));
-    expect(health.conditions).toEqual(['asthma']);
+    expect(health.allergies).toEqual(expect.arrayContaining(['peanuts', 'tree nuts']));
+    expect(health.conditions).toEqual(['other']);
   });
 
   it('child profiles carry NO weight (PR01); adults do', async () => {
