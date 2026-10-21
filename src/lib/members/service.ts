@@ -7,6 +7,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { member, memberAttendance, memberPref } from "../../../db/schema";
 import type { Db } from "../db";
 import { isChildAge } from "./age";
+import { assertMemberCapacity } from "../tier/service";
 import type { NormalizedProfile } from "./validation";
 import { MemberError, type MemberProfile } from "./types";
 
@@ -69,6 +70,7 @@ export async function createMember(
   now: Date,
 ): Promise<string> {
   return db.transaction(async (tx) => {
+    await assertMemberCapacity(tx, householdId);
     const [row] = await tx
       .insert(member)
       .values({
