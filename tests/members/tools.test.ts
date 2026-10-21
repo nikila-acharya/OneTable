@@ -107,20 +107,16 @@ describe.skipIf(!hasDb)("member tools via the registry (live DB)", () => {
     expect(await db.select().from(member).where(eq(member.householdId, hh))).toHaveLength(0);
   });
 
-  it("a credential is refused at the schema; an off-list allergen is refused on apply (gap, ADR-006)", async () => {
+  it("a credential or an off-list allergen is refused at proposal time, with no approval created", async () => {
     const hh = await newHousehold();
     const store = new InMemoryApprovalStore();
     const registry = makeRegistry(db, store);
     const ctx = { runId: "run-3", householdId: hh };
     const withEmail = await registry.call("setup", "create_or_update_member", { ...input, email: "x@y.z" }, ctx);
     expect(!withEmail.ok && withEmail.error).toBe("invalid_input");
-    // Known gap (ADR-005/006): the registry checks only top-level types, not
-    // item enums, so this proposal IS created; the domain check refuses it on apply.
+    // ADR-006-G1 fix (approved 2026-10-21): item enums are checked at proposal time.
     const withBadAllergen = await registry.call("setup", "create_or_update_member", { ...input, allergies: ["peanut"] }, ctx);
-    expect(withBadAllergen.ok && withBadAllergen.outcome).toBe("approval_requested");
-    await approve(store, (withBadAllergen as { approvalId: string }).approvalId);
-    const refused = await registry.call("setup", "create_or_update_member", { ...input, allergies: ["peanut"], approvalId: (withBadAllergen as { approvalId: string }).approvalId }, ctx);
-    expect(!refused.ok && refused.error).toBe("tool_error");
+    expect(!withBadAllergen.ok && withBadAllergen.error).toBe("invalid_input");
     expect(await db.select().from(member).where(eq(member.householdId, hh))).toHaveLength(0);
   });
 

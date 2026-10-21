@@ -19,3 +19,7 @@ Also: heightCm/weightKg are typed as plain number in the tool schema because the
 - Uncertain allergen flags and confirmations (PR02, WP-3.x).
 - The onboarding UI sex and activity values differ from the backend enums (UI: female/male/prefer-not, low-active/very-active; backend: male/female/other/unspecified, light/moderate/high/athlete). Mapping belongs to WP-1.6 and must be decided before onboarding writes to the backend.
 - Consent-gated health writes from the onboarding UI (WP-1.6).
+
+## G1 decision, revised (owner, 2026-10-21): fix approved
+The owner first rejected extending validateInput, then approved it. agent/tools/registry.ts now validates, on every call, the JSON Schema subset in agent/tools/json.ts: type unions (e.g. ['number','null']), integer, enum, minimum/maximum, minLength/maxLength, pattern, items, minItems/maxItems, uniqueItems, and nested objects (required, declared properties, additionalProperties false). Top-level messages keep their original wording. Tests: tests/agent/validate-input.test.ts. Tool permission levels and the roster are unchanged. Because this is Section 7 tool-layer code, the PR was reviewed as a Safety & QA change (13.5).
+Effect: off-list allergens and conditions are refused at proposal time, so no approval card is created for them. The apply-time domain check remains as a second line of defence.
