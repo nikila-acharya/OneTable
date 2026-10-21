@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useState } from "react";
 import { OtButton } from "@/components/ui/controls";
 import type { OnboardingDraft } from "../store";
 
@@ -18,12 +19,33 @@ export function Welcome({
   draft,
   onStart,
   onStartOver,
+  needsAccount = false,
+  onCreateAccount,
 }: {
   draft: OnboardingDraft;
   onStart: () => void;
   onStartOver: () => void;
+  /** True until sign-up (or sign-in to an existing account) has succeeded. */
+  needsAccount?: boolean;
+  /** Returns an error message to show, or null when the account is ready. */
+  onCreateAccount?: (email: string, password: string) => Promise<string | null>;
 }) {
   const resumable = hasSavedDraft(draft);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function createAccount() {
+    if (!onCreateAccount) return;
+    setBusy(true);
+    setError(null);
+    const msg = await onCreateAccount(email.trim(), password);
+    if (msg) {
+      setError(msg);
+      setBusy(false);
+    }
+  }
   return (
     <section aria-label="Welcome">
       <div className="ot-brand">
@@ -48,16 +70,54 @@ export function Welcome({
         We’ll ask permission for allergies and health details only at the moment you add them —
         never before.
       </p>
-      <div className="ot-primary">
-        <OtButton full onClick={onStart}>
-          {resumable ? "Continue where you left off ›" : "Get started ›"}
-        </OtButton>
-        {resumable ? (
-          <OtButton kind="ghost" full onClick={onStartOver}>
-            Start over (clears the saved draft)
+      {needsAccount ? (
+        <div className="ot-account" aria-label="Create your account">
+          <p className="ot-sub" style={{ marginBottom: 8 }}>
+            Create the login for your household. Only this login can see your plan.
+          </p>
+          <label style={{ display: "block", marginBottom: 8 }}>
+            Email
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ display: "block", width: "100%", marginTop: 4 }}
+            />
+          </label>
+          <label style={{ display: "block", marginBottom: 8 }}>
+            Password (at least 10 characters)
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ display: "block", width: "100%", marginTop: 4 }}
+            />
+          </label>
+          {error ? (
+            <p role="alert" className="ot-sub" style={{ color: "var(--warn)", marginBottom: 8 }}>
+              {error}
+            </p>
+          ) : null}
+          <div className="ot-primary">
+            <OtButton full onClick={createAccount} disabled={busy}>
+              {busy ? "Creating your account…" : "Create account & start ›"}
+            </OtButton>
+          </div>
+        </div>
+      ) : (
+        <div className="ot-primary">
+          <OtButton full onClick={onStart}>
+            {resumable ? "Continue where you left off ›" : "Get started ›"}
           </OtButton>
-        ) : null}
-      </div>
+          {resumable ? (
+            <OtButton kind="ghost" full onClick={onStartOver}>
+              Start over (clears the saved draft)
+            </OtButton>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }
