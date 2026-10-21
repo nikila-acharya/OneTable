@@ -48,6 +48,8 @@ describe("member tool levels", () => {
 describe.skipIf(!hasDb)("member tools via the registry (live DB)", () => {
   let db: Db;
   beforeAll(() => {
+    // Health blobs need ENCRYPTION_KEY; CI's unit job has none, so use a throwaway test key.
+    if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
     db = openDb().db;
   });
   afterAll(async () => {
