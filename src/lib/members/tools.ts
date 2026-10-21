@@ -33,8 +33,8 @@ const PROFILE_SCHEMA = {
     likes: TAG_SCHEMA,
     dislikes: TAG_SCHEMA,
     // Health (WP-1.3): consent is checked on apply, and values are stored encrypted.
-    heightCm: { type: "number", minimum: 50, maximum: 250 }, // registry checks one type string; domain validation allows clearing
-    weightKg: { type: "number", minimum: 2, maximum: 400 },
+    heightCm: { type: ["number", "null"], minimum: 50, maximum: 250 }, // null clears the value
+    weightKg: { type: ["number", "null"], minimum: 2, maximum: 400 },
     conditions: { type: "array", uniqueItems: true, items: { type: "string", enum: [...CONDITIONS] } },
     allergies: { type: "array", uniqueItems: true, items: { type: "string", enum: [...ALLERGENS] } },
     otherAllergens: { type: "array", maxItems: 20, items: { type: "string", minLength: 1, maxLength: 40 } },
