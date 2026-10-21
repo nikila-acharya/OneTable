@@ -139,8 +139,8 @@ const BUSY_PARENTS: MemberSpec[] = [
     diet: 'omnivore', isChild: true,
     health: {
       heightCm: 142, weightKg: null, // PR01: no weight on child profiles
-      conditions: ['asthma'],
-      allergies: ['peanut', 'tree_nut'],
+      conditions: ['other'], // PR03: asthma is not a listed condition; 'other' is not acted on
+      allergies: ['peanuts', 'tree nuts'],
       otherAllergens: [],
     },
     likes: ['pasta', 'pancakes'], dislikes: ['mushrooms'],
