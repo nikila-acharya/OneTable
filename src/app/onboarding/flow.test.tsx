@@ -6,6 +6,9 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Sign-in and the API are stubbed: the flow is tested, not the server (WP-1.6).
+vi.mock("next-auth/react", () => ({ signIn: vi.fn(async () => ({ error: undefined })) }));
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import OnboardingApp from "./onboarding";
 import { STORAGE_KEY, newDraft, newMember, type OnboardingDraft } from "./store";
@@ -24,6 +27,10 @@ async function expectNeverChip(name: string) {
 beforeEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify({ householdId: "h", members: 1, consents: 0 }), { status: 201, headers: { "content-type": "application/json" } })),
+  );
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
@@ -42,12 +49,14 @@ beforeEach(() => {
 
 async function boot() {
   render(<OnboardingApp />);
-  await screen.findByRole("button", { name: "Get started ›" });
+  await screen.findByLabelText("Email");
 }
 
 async function toHousehold() {
   await boot();
-  fireEvent.click(screen.getByRole("button", { name: "Get started ›" }));
+  fireEvent.change(screen.getByLabelText("Email"), { target: { value: "family@test.invalid" } });
+  fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correct-horse-battery" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create account & start ›" }));
   await screen.findByRole("heading", { name: "Your household" });
 }
 

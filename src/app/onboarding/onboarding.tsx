@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import "./onboarding.css";
+import { signIn } from "next-auth/react";
 import {
   clearDraft,
   getDraftSnapshot,
@@ -110,6 +111,50 @@ export default function OnboardingApp() {
     update({ ...draft, step: 6, finishedAt: null, firstPlanRequestedAt: null });
   }, [draft, update]);
 
+  /** Sign-up, then sign-in with the same details (covers an existing account). */
+  const createAccount = useCallback(
+    async (email: string, password: string): Promise<string | null> => {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.status === 422) return "Use a valid email and a password of at least 10 characters.";
+      if (!res.ok && res.status !== 409) return "We could not create the account. Please try again.";
+      const r = await signIn("credentials", { email, password, redirect: false });
+      if (!r || r.error) return "That email and password do not match an account.";
+      update({
+        ...draft,
+        accountCreated: true,
+        step: 2,
+        completed: draft.completed.includes(1) ? draft.completed : [...draft.completed, 1],
+      });
+      return null;
+    },
+    [draft, update],
+  );
+
+  /** Saves the whole draft in one call; the server validates before writing. */
+  const submitDraft = useCallback(async (): Promise<{ ok: true } | { ok: false; message: string }> => {
+    const res = await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(draft),
+    });
+    if (res.ok) return { ok: true };
+    if (res.status === 401) {
+      // Session gone: back to the welcome step to sign in again. Answers are kept.
+      update({ ...draft, accountCreated: false, step: 1, finishedAt: null, firstPlanRequestedAt: null });
+      return { ok: false, message: "Your sign-in has ended. Sign in again to save your plan." };
+    }
+    if (res.status === 422) {
+      const body = (await res.json().catch(() => ({}))) as { issues?: unknown };
+      const issues = Array.isArray(body.issues) ? body.issues.slice(0, 3).join(" · ") : "";
+      return { ok: false, message: `Some details need a fix before we can save: ${issues}` };
+    }
+    return { ok: false, message: "We could not save your plan yet. Your answers are kept, so try again." };
+  }, [draft, update]);
+
   const finished = draft.finishedAt !== null;
   const meta = FLOW_STEPS.find((s) => s.n === (finished ? 6 : draft.step))!;
 
@@ -164,11 +209,21 @@ export default function OnboardingApp() {
         <Done draft={draft} onReopen={reopenReview} onStartOver={startOver} />
       ) : (
         <div className="ot-screen" key={draft.step}>
-          {draft.step === 1 && <Welcome draft={draft} onStart={() => goTo(2)} onStartOver={startOver} />}
+          {draft.step === 1 && (
+            <Welcome
+              draft={draft}
+              onStart={() => goTo(2)}
+              onStartOver={startOver}
+              needsAccount={!draft.accountCreated}
+              onCreateAccount={createAccount}
+            />
+          )}
           {draft.step === 2 && <Household draft={draft} update={update} goTo={goTo} goBack={goBack} />}
           {draft.step === 3 && <Members draft={draft} update={update} goTo={goTo} goBack={goBack} />}
           {draft.step === 4 && <Meals draft={draft} update={update} goTo={goTo} goBack={goBack} />}
-          {draft.step === 6 && <Review draft={draft} update={update} goTo={goTo} goBack={goBack} />}
+          {draft.step === 6 && (
+            <Review draft={draft} update={update} goTo={goTo} goBack={goBack} submitDraft={submitDraft} />
+          )}
         </div>
       )}
     </main>

@@ -71,10 +71,13 @@ export function Review({
   update,
   goTo,
   goBack,
+  submitDraft,
 }: {
   draft: OnboardingDraft;
   update: (d: OnboardingDraft) => void;
   goTo: (n: OnboardStep) => void;
+  /** Saves the draft to the backend (WP-1.6). Resolves ok, or a message to show. */
+  submitDraft?: () => Promise<{ ok: true } | { ok: false; message: string }>;
   goBack: () => void;
 }) {
   const h = draft.household;
@@ -134,7 +137,17 @@ export function Review({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, visible]);
 
-  const startPlan = () => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const startPlan = async () => {
+    if (submitDraft) {
+      const res = await submitDraft();
+      if (!res.ok) {
+        setSubmitError(res.message);
+        return;
+      }
+    }
+    setSubmitError(null);
     setVisible(0);
     setPhase("progress");
   };
@@ -204,7 +217,12 @@ export function Review({
       </ReviewSection>
 
       <div className="ot-primary">
-        <OtButton full onClick={startPlan} disabled={phase === "progress"}>
+        {submitError ? (
+          <p role="alert" className="ot-sub" style={{ color: "var(--warn)", marginBottom: 8 }}>
+            {submitError}
+          </p>
+        ) : null}
+        <OtButton full onClick={() => void startPlan()} disabled={phase === "progress"}>
           Plan our first week
         </OtButton>
         <div className="ot-navrow">

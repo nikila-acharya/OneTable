@@ -178,6 +178,8 @@ export type OnboardingDraft = {
   members: MemberDraft[];
   meals: MemberMeals[];
   consent: ConsentState;
+  /** Set once sign-up/sign-in succeeded in this browser (WP-1.6). Optional so older drafts stay valid. */
+  accountCreated?: boolean;
   /** Set when the User taps "Plan our first week" (stub — plan lands in M3). */
   firstPlanRequestedAt: string | null;
   /** Set when the User taps "Finish setup" on the approval card (done screen). */
