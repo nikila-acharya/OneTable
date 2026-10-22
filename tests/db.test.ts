@@ -43,6 +43,9 @@ suite('WP-0.2 migrations + seed (live DB)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    // PV03 erases the demo households to prove the cascade; restore them so the dev DB keeps
+    // its demo data after a test run (the seed is re-runnable by design).
+    await seed(db);
     await close?.();
   });
 
