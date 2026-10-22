@@ -7,10 +7,12 @@ import { isAllowed, parseRobots, USER_AGENT, type RobotsRules } from "./robots";
 export const MIN_INTERVAL_MS = 1000;
 export const MAX_BYTES = 2_000_000;
 export const TIMEOUT_MS = 15_000;
+/** A site asking for longer gaps than this between visits is skipped, not waited on. */
+export const MAX_CRAWL_DELAY_SECONDS = 60;
 
 export type FetchOutcome =
   | { status: "ok"; url: string; body: string }
-  | { status: "skipped"; url: string; reason: "robots_disallowed" | "robots_unavailable" | "not_html" | "too_large" | "http_error" | "network_error"; message: string };
+  | { status: "skipped"; url: string; reason: "robots_disallowed" | "robots_unavailable" | "crawl_delay_too_long" | "not_html" | "too_large" | "http_error" | "network_error"; message: string };
 
 export interface FetcherDeps {
   fetchImpl: typeof fetch;
@@ -21,6 +23,7 @@ export interface FetcherDeps {
 const MESSAGES = {
   robots_disallowed: "The site's robots.txt does not allow this page, so we skipped it.",
   robots_unavailable: "The site's robots.txt could not be read right now, so we skipped it to be safe.",
+  crawl_delay_too_long: "This site asks visitors to wait several minutes between requests, so we did not import from it.",
   not_html: "This link is not a web page we can read, so we skipped it.",
   too_large: "This page is too large to import, so we skipped it.",
   http_error: "The site returned an error for this page, so we skipped it.",
@@ -44,10 +47,16 @@ export function createFetcher(deps: FetcherDeps) {
       p = (async () => {
         try {
           await throttle(new URL(origin).host, MIN_INTERVAL_MS);
-          const res = await deps.fetchImpl(origin + "/robots.txt", { headers: { "User-Agent": USER_AGENT }, redirect: "follow" });
-          if (res.status === 404 || res.status === 410) return { allow: [], disallow: [], crawlDelaySeconds: null };
-          if (!res.ok) return "unavailable";
-          return parseRobots(await res.text());
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+          try {
+            const res = await deps.fetchImpl(origin + "/robots.txt", { headers: { "User-Agent": USER_AGENT }, redirect: "follow", signal: controller.signal });
+            if (res.status === 404 || res.status === 410) return { allow: [], disallow: [], crawlDelaySeconds: null };
+            if (!res.ok) return "unavailable";
+            return parseRobots(await res.text());
+          } finally {
+            clearTimeout(timer);
+          }
         } catch {
           return "unavailable";
         }
@@ -64,7 +73,9 @@ export function createFetcher(deps: FetcherDeps) {
     const pathAndQuery = u.pathname + u.search;
     if (!isAllowed(rules, pathAndQuery)) return { status: "skipped", url, reason: "robots_disallowed", message: MESSAGES.robots_disallowed };
 
-    const gap = Math.max(MIN_INTERVAL_MS, (rules.crawlDelaySeconds ?? 0) * 1000);
+    const delaySeconds = rules.crawlDelaySeconds ?? 0;
+    if (delaySeconds > MAX_CRAWL_DELAY_SECONDS) return { status: "skipped", url, reason: "crawl_delay_too_long", message: MESSAGES.crawl_delay_too_long };
+    const gap = Math.max(MIN_INTERVAL_MS, delaySeconds * 1000);
     await throttle(u.host, gap);
 
     const controller = new AbortController();
