@@ -19,3 +19,8 @@ Relates to: PRD 5.0 (ON01), PR01, PR02, PR03, PV01, AC01; ADR-004, ADR-005, ADR-
 - **Not one transaction:** the writes are sequential service calls. Validation runs first, so only a database error mid-write can leave partial data. Making it atomic means the services must accept a transaction handle; that is a refactor for a later WP.
 - **Consent withdrawals in the draft are not written** (only grants). Withdrawals happen later, through the consent panel.
 - **No submit route and no signup yet.** Onboarding runs before sign-in and must create the household and its first user. That is a product/auth decision that needs the owner (see WP-1.6 notes).
+
+## Update (WP-1.6 finish, 2026-10-21)
+- **Single transaction:** the write phase (household, settings, consent, members, health, attendance) runs in one database transaction. A failure anywhere leaves nothing behind. Tested by injecting a failure into the health write: no settings, members, consent or name change remain.
+- **Done screen reads the server:** GET /api/onboarding/summary returns the stored household name, member names and settings. The Done screen shows them, and falls back to the browser draft if the call fails.
+- **Still open:** the household-settings bounds and the PRD table list (ADR-010). The change_household_settings tool (agent team).

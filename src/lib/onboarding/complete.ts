@@ -105,41 +105,45 @@ export async function completeOnboarding(
 
   if (issues.length > 0) throw new OnboardingRejectedError(issues);
 
-  // 2. Household details that the backend stores (name, timezone).
-  await db.update(household).set({ name: draft.household.name.trim() || undefined, timezone: draft.household.timezone }).where(eq(household.id, householdId));
+  // 2-4. Every write runs in one transaction: a failure anywhere leaves nothing behind (ADR-008).
+  return db.transaction(async (tx) => {
+    const t = tx as unknown as Db;
+    // Household details that the backend stores (name, timezone).
+    await t.update(household).set({ name: draft.household.name.trim() || undefined, timezone: draft.household.timezone }).where(eq(household.id, householdId));
 
-  // 2b. Household cooking preferences (validated above).
-  await saveHouseholdSettings(db, householdId, settingsInput);
+    // 2b. Household cooking preferences (validated above).
+    await saveHouseholdSettings(t, householdId, settingsInput);
 
-  // 3. Consent first, so the health writes below are allowed.
-  let consents = 0;
-  for (const ui of consentGranted) {
-    await grantConsent(db, householdId, mapConsentType(ui as ConsentTypeUi));
-    consents++;
-  }
-
-  // 4. Members, then their health and meal attendance.
-  const idMap = new Map<string, string>();
-  for (const { m, profile, health } of plans) {
-    if (!profile.ok) continue;
-    const memberId = await createMember(db, householdId, profile.value as Parameters<typeof createMember>[2], now);
-    idMap.set(m.id, memberId);
-    if (health) await writeHealth(db, householdId, memberId, health);
-  }
-  for (const meals of draft.meals as MemberMeals[]) {
-    const memberId = idMap.get(meals.memberId);
-    if (!memberId) continue;
-    const entries: AttendanceEntry[] = [];
-    for (let weekday = 0; weekday < 7; weekday++) {
-      for (const mealType of MEAL_TYPES) {
-        const attending = mealType === "snack" ? meals.snack : meals[mealType];
-        const packed = mealType === "lunch" && meals.packedLunch !== "";
-        entries.push({ mealType, weekday, attending: Boolean(attending), packed });
-      }
+    // 3. Consent first, so the health writes below are allowed.
+    let consents = 0;
+    for (const ui of consentGranted) {
+      await grantConsent(t, householdId, mapConsentType(ui as ConsentTypeUi));
+      consents++;
     }
-    await setAttendance(db, householdId, memberId, entries);
-  }
-  return { members: idMap.size, consents };
+
+    // 4. Members, then their health and meal attendance.
+    const idMap = new Map<string, string>();
+    for (const { m, profile, health } of plans) {
+      if (!profile.ok) continue;
+      const memberId = await createMember(t, householdId, profile.value as Parameters<typeof createMember>[2], now);
+      idMap.set(m.id, memberId);
+      if (health) await writeHealth(t, householdId, memberId, health);
+    }
+    for (const meals of draft.meals as MemberMeals[]) {
+      const memberId = idMap.get(meals.memberId);
+      if (!memberId) continue;
+      const entries: AttendanceEntry[] = [];
+      for (let weekday = 0; weekday < 7; weekday++) {
+        for (const mealType of MEAL_TYPES) {
+          const attending = mealType === "snack" ? meals.snack : meals[mealType];
+          const packed = mealType === "lunch" && meals.packedLunch !== "";
+          entries.push({ mealType, weekday, attending: Boolean(attending), packed });
+        }
+      }
+      await setAttendance(t, householdId, memberId, entries);
+    }
+    return { members: idMap.size, consents };
+  });
 }
 
 type ConsentTypeUi = "allergies" | "conditions" | "measurements";
