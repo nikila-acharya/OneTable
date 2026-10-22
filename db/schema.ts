@@ -765,6 +765,9 @@ export const recipe = pgTable(
     parseMethod: parseMethod('parse_method').notNull().default('manual'),
 
     status: recipeStatus('status').notNull().default('ready'),
+    // RE02: fields the parser was unsure of, and its per-field confidence (ADR-013).
+    unsureFields: text('unsure_fields').array().notNull().default(sql`ARRAY[]::text[]`),
+    parseConfidence: jsonb('parse_confidence'),
 
     takedownAt: timestamp('takedown_at', { withTimezone: true }), // takedown runbook
 

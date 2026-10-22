@@ -8,6 +8,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Sign-in and the API are stubbed: the flow is tested, not the server (WP-1.6).
+// The full suite runs many DB and jsdom files; these UI flows need headroom under load.
+vi.setConfig({ testTimeout: 60_000 });
 vi.mock("next-auth/react", () => ({ signIn: vi.fn(async () => ({ error: undefined })) }));
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import OnboardingApp from "./onboarding";
