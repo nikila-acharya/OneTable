@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { openDb, type Db } from "../../db/index";
+import { seed } from "../../db/seed.js";
 import { household, consent } from "../../db/schema";
 import { listMembers } from "../../src/lib/members/service";
 import { getMemberSummary } from "../../src/lib/health/summary";
@@ -14,10 +15,13 @@ const DEMOS = ["Busy Parent Household", "Fitness Couple Household"];
 
 describe.skipIf(!hasDb)("M1 exit: demo households end-to-end (live DB)", () => {
   let db: Db;
-  beforeAll(() => {
+  beforeAll(async () => {
     if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
     db = openDb().db;
-  });
+    // Seed here, in the same file, so the health blobs are encrypted and read with the same key.
+    // (Each test file may generate its own throwaway ENCRYPTION_KEY; see CI unit job.)
+    await seed(db);
+  }, 120_000);
 
   for (const name of DEMOS) {
     it(`${name}: members, consent, summary (flags only), settings and onboarding summary`, async () => {
