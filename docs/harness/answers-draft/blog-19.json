@@ -1,0 +1,40 @@
+{
+ "id": "blog-19",
+ "url": "https://www.themediterraneandish.com/caponata-recipe/",
+ "source": "The Mediterranean Dish",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Caponata Recipe",
+ "recipeYield": "['6', '6 people']",
+ "prepTime": "PT20M",
+ "cookTime": "PT45M",
+ "totalTime": "PT65M",
+ "ingredients": [
+  "1 large eggplant (1 ¼ lb or so, cut into 1-inch cubes)",
+  "Kosher salt",
+  "Extra virgin olive oil",
+  "1 yellow onion (chopped)",
+  "1 red bell pepper (cored and chopped)",
+  "2 small celery stalks (thinly sliced)",
+  "Black pepper",
+  "1 cup crushed tomatoes",
+  "2 tbsp capers",
+  "¼ cup pitted green olives (roughly chopped)",
+  "¼ cup raisins",
+  "2 teaspoons honey (more to your liking)",
+  "1 bay leaf",
+  "¼ tsp to ½ tsp crushed red pepper flakes",
+  "1/4 cup red wine vinegar",
+  "¼ cup dry white wine",
+  "2 tbsp chopped fresh parsley",
+  "2 tbsp chopped fresh mint"
+ ],
+ "steps": [
+  "Heat the oven to 400 degrees F.",
+  "Season the eggplant cubes with salt (if you have the time, set it aside in a colander to sweat out its bitterness for about 20 or 30 minutes, while you prepare the remaining ingredients. Pat dry with paper towel).",
+  "Place the seasoned eggplant cubes on a sheet pan, add a generous drizzle of extra virgin olive oil (about 3 tablespoons or so) and toss to coat. Roast the eggplant in the heated oven for 25 to 30 minutes or until browned.",
+  "Heat 2 tablespoons of extra virgin olive oil in a large skillet. Add the onions, bell pepper, and celery. Season with a pinch of kosher salt and black pepper. Cook for about 5 to 7 minutes, tossing regularly until softened.",
+  "Add the tomatoes, capers, olives, raisins, honey, bay leaf and crushed pepper flakes. Pour in the vinegar and white wine. Stir to combine. Simmer on medium-low heat for 10 minutes.",
+  "Stir in the roasted eggplant and cook for another 2 to 3 minutes in the sauce. Finish with fresh parsley and mint."
+ ]
+}

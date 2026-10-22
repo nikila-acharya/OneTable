@@ -1,0 +1,38 @@
+{
+ "id": "blog-14",
+ "url": "https://www.veganricha.com/quinoa-upma-recipe/",
+ "source": "Vegan Richa",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Quinoa Upma Recipe",
+ "recipeYield": "['4']",
+ "prepTime": "PT10M",
+ "cookTime": "PT35M",
+ "totalTime": "PT45M",
+ "ingredients": [
+  "1 cup uncooked quinoa",
+  "1 tsp organic canola or safflower oil",
+  "1/2 tsp mustard seeds",
+  "1/2 tsp urad dal (split black gram or use mung dal (petite yellow lentils))",
+  "1 green chili chopped (remove seeds to adjust spice if needed)",
+  "a generous pinch of asafeotida hing (optional (omit to make gluten-free or use certified gf asafetida))",
+  "10 curry leaves (fresh or frozen)",
+  "1/2 cup finely chopped red onion",
+  "2 Tbsp chopped cashews",
+  "1/2 inch ginger minced (1 tsp grated)",
+  "1/2 cup chopped carrots",
+  "1/2 cup peas (fresh or frozen (thawed))",
+  "1/2 to 3/4 tsp salt",
+  "2 cups water",
+  "cilantro and lemon juice for garnish"
+ ],
+ "steps": [
+  "Wash the quinoa several times, drain and keep aside.",
+  "In a medium skillet, add oil and heat at medium. When the oil is hot, add mustard seeds and urad dal and let them sputter or sizzle for 15 seconds.",
+  "Add chili, asafeotida and curry leaves and cook for half a minute.",
+  "Add onions and cashews and cook for 4 to 5 minutes or until translucent.",
+  "Add ginger, carrots, and cook for 2 minutes.",
+  "Add quinoa and roast for 2 minutes with the veggies.",
+  "Add salt, water, peas, cover and bring to a boil. Reduce heat to low-medium, cover and cook for 15 minutes. Let the quinoa sit covered for 5 minutes. then uncover, fluff and serve. Garnish with cilantro and generous lemon juice. Serve as a side, or as breakfast with hot masala chai."
+ ]
+}

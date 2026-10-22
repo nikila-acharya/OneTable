@@ -1,0 +1,29 @@
+{
+ "id": "blog-17",
+ "url": "https://schoolnightvegan.com/home/vegan-pesto-recipe/",
+ "source": "School Night Vegan",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Vegan Pesto Recipe",
+ "recipeYield": "['4']",
+ "prepTime": "",
+ "cookTime": "",
+ "totalTime": "",
+ "ingredients": [
+  "1  large garlic clove",
+  "3 tbsp lemon juice",
+  "1 tsp flaky sea salt",
+  "50 g pine nuts OR raw unsalted cashews",
+  "200 g fresh basil ((stalks removed))",
+  "4 tbsp extra virgin olive oil",
+  "2 tbsp nutritional yeast"
+ ],
+ "steps": [
+  "Place the garlic in a mortar and use the pestle to crush well. Add the lemon juice and salt and continue crushing until everything has formed a coarse paste.",
+  "If using cashews, chop them roughly. Place a dry frying pan over medium-low heat and bring to temperature. Add the pine nuts or the chopped cashews and toast until gently browned and fragrant. Watch like a hawk because they'll burn very easily.",
+  "Add the nuts to the mortar with the garlic paste and crush until roughly ground (I like them quite chunky).",
+  "Working with small handfuls, add the basil to the mortar bit by bit, grinding well until dark green and nicely mushed. Continue until all your basil is added.",
+  "Add the olive oil. Grind again briefly until you have the desired consistency before adding the nutritional yeast and stirring into the pesto until dissolved.",
+  "The pesto is ready to use straight away (I like to stir through pasta with some roasted cherry tomatoes). You can also seal in an airtight container in the fridge for about a week."
+ ]
+}
