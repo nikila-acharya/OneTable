@@ -163,7 +163,7 @@
   }
  ],
  "blog_count": 40,
- "social_pending": 5,
+ "social_pending": 4,
  "excluded": [
   "Rainbow Plant Life (no verified recipe page)",
   "Deliciously Ella (no verified recipe page)",
@@ -210,7 +210,14 @@
    "url": "https://www.instagram.com/reel/DL-ijJ1PrG9/",
    "source": "owner's saved collection",
    "fetched": false
+  },
+  {
+   "platform": "instagram",
+   "type": "reel",
+   "url": "https://www.instagram.com/reel/DewdPonokpU/",
+   "source": "owner's saved collection",
+   "fetched": false
   }
  ],
- "social_received": 5
+ "social_received": 6
 }
