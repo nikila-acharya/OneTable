@@ -1,0 +1,34 @@
+{
+ "id": "blog-38",
+ "url": "https://www.veganricha.com/vegan-sponge-cake-recipe/",
+ "source": "Vegan Richa",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Vegan Sponge Cake Recipe",
+ "recipeYield": "['8']",
+ "prepTime": "PT15M",
+ "cookTime": "PT45M",
+ "totalTime": "PT60M",
+ "ingredients": [
+  "1 cup Spelt flour",
+  "1/2 cup oat flour",
+  "2 Tbsp cornstarch (or arrowroot starch)",
+  "1.5 teaspoon baking powder",
+  "1/4 teaspoon baking soda",
+  "2 Tablespoons flaxmeal (or chia seed meal)",
+  "1/3 cup warm water",
+  "3/4 cup ground raw sugar (2 Tbsp more for sweeter)",
+  "2 Tbsp oil",
+  "1/2 cup coconut milk (or almond milk)",
+  "2 tsp vinegar (I use apple cider vinegar)",
+  "1/4 teaspoon fine sea salt",
+  "2 tsp vanilla extract"
+ ],
+ "steps": [
+  "Preheat the oven to 365 deg F / 180ºc.",
+  "In a bowl, whisk all dry ingredients and keep aside.",
+  "In another bowl, mix flaxmeal with warm water and let sit for 2 minutes. Add the rest of the ingredients under wet, mix until the sugar is combined well.",
+  "Transfer dry to wet. Mix to just about combine. Pour the batter into greased and floured 8 inch cake pans or parchment lined pans.",
+  "Bake for 35 to 40 mins or until a toothpick from the center comes out clean. Cool for 5 minutes, then remove the cake from the pan. Cool completely before cutting into desired size for the trifle."
+ ]
+}

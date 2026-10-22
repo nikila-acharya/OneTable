@@ -1,0 +1,24 @@
+{
+ "id": "blog-35",
+ "url": "https://plantbasedonabudget.com/easy-charoset-recipe/",
+ "source": "Plant-Based on a Budget",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Chunky Charoset",
+ "recipeYield": "['1', '1 batch']",
+ "prepTime": "PT10M",
+ "cookTime": "",
+ "totalTime": "PT10M",
+ "ingredients": [
+  "1 fuji apple (finely diced)",
+  "1 bartlett pear (finely diced)",
+  "½ cup of finely chopped walnuts",
+  "½ cup of dried cranberries",
+  "½ cup of purple grape juice",
+  "½ teaspoon of cinnamon",
+  "¼ teaspoon of nutmeg"
+ ],
+ "steps": [
+  "In a bowl, mix all the ingredients until well-combined."
+ ]
+}

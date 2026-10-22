@@ -1,21 +1,27 @@
 {
  "id": "blog-21",
- "url": "https://theplantbasedschool.com/pasta-recipes/",
+ "url": "https://theplantbasedschool.com/chimichurri-recipe/",
  "source": "The Plant Based School",
  "status": "DRAFT - unverified, a person must check against the page",
  "draft_from": "schema.org Recipe JSON-LD published on the page",
- "name": "35 Healthy Pasta Recipes",
- "recipeYield": "['4', '4 people']",
+ "name": "Chimichurri Recipe",
+ "recipeYield": "['10', '10 tablespoons']",
  "prepTime": "PT5M",
- "cookTime": "PT20M",
- "totalTime": "PT25M",
+ "cookTime": "",
+ "totalTime": "PT5M",
  "ingredients": [
-  "Check each individual pasta recipe for ingredients required.",
-  "Make your favorite pasta recipe, and try something new!"
+  "½ packed cup parsley (finely chopped)",
+  "2 cloves garlic (minced)",
+  "¼ teaspoon red pepper flakes",
+  "¼ teaspoon dried oregano",
+  "½ teaspoon salt",
+  "⅓ cup extra virgin olive oil",
+  "2 tablespoons red wine vinegar"
  ],
  "steps": [
-  "How to store: Keep these pasta meals stored in the refrigerator, ideally in an airtight container, for up to 3 days.",
-  "How to reheat: Warm it up on the stovetop or in the microwave. Before serving garnish with fresh herbs.",
-  "How to freeze: You can also freeze the meals for up to 3 months. To freeze, let it cool down first, then transfer them to a freezer-friendly container, leaving some space to allow it to expand. Thaw in the microwave or in a pot on the stovetop. Before serving, garnish with fresh herbs, and optionally a drizzle of olive oil."
+  "Wash and pat dry the parsley. Remove the thicker stems, and finely chop it.",
+  "Peel the garlic and cut it in half lengthwise. Remove the core (if any) then finely mince the garlic.",
+  "To a small mixing bowl or in a medium sized jar, add finely chopped parsley, minced garlic, dried oregano, salt, red pepper flakes, olive oil, and vinegar.",
+  "Mix well with a spoon and your chimichurri is ready. For best flavor, let sit for at least 10 minutes before serving."
  ]
 }
