@@ -87,6 +87,38 @@ const html = (body = "<html><body>recipe</body></html>") =>
   new Response(body, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
 
 describe("fetcher", () => {
+  it("a site asking for a very long crawl delay is skipped with a plain reason (no multi-minute wait)", async () => {
+    const web = fakeWeb({
+      "https://slow-site.example/robots.txt": () => new Response("User-agent: *\nCrawl-delay: 600", { status: 200 }),
+    });
+    const out = await createFetcher(web.deps).fetchPage("https://slow-site.example/recipes/soup");
+    expect(out.status === "skipped" && out.reason).toBe("crawl_delay_too_long");
+    expect(web.sleeps.every((ms) => ms < 60_000)).toBe(true);
+  });
+
+  it("a short crawl delay is honoured as the gap between requests", async () => {
+    const web = fakeWeb({
+      "https://polite.example/robots.txt": () => new Response("User-agent: *\nCrawl-delay: 5", { status: 200 }),
+      "https://polite.example/a": () => html(),
+      "https://polite.example/b": () => html(),
+    });
+    const f = createFetcher(web.deps);
+    await f.fetchPage("https://polite.example/a");
+    await f.fetchPage("https://polite.example/b");
+    const pageCalls = web.calls.filter((c) => c.url.endsWith("/a") || c.url.endsWith("/b"));
+    expect(pageCalls[1]!.at - pageCalls[0]!.at).toBeGreaterThanOrEqual(5000);
+  });
+
+  it("a robots.txt that never answers times out and counts as unavailable (no hang)", async () => {
+    const hanging = ((input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise((_, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        void input;
+      })) as unknown as typeof fetch;
+    const out = await createFetcher({ fetchImpl: hanging, now: () => Date.now(), sleep: async () => {} }).fetchPage("https://slow.example/recipes/x");
+    expect(out.status === "skipped" && out.reason).toBe("robots_unavailable");
+  }, 30_000);
+
   it("skips a disallowed path and says why in plain words", async () => {
     const web = fakeWeb({
       "https://blog.example/robots.txt": () => new Response("User-agent: *\nDisallow: /private/", { status: 200 }),
