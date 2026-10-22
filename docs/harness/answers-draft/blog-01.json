@@ -1,0 +1,41 @@
+{
+ "id": "blog-01",
+ "url": "https://hebbarskitchen.com/paneer-bread-roll-recipe/",
+ "source": "Hebbar's Kitchen",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "paneer bread roll recipe | bread paneer rolls | paneer stuffed bread rolls",
+ "recipeYield": "['6', '6 Servings']",
+ "prepTime": "PT5M",
+ "cookTime": "PT10M",
+ "totalTime": "PT15M",
+ "ingredients": [
+  "1 cup paneer / cottage cheese (grated)",
+  "½ tsp ginger garlic paste",
+  "½ tsp kashmiri red chilli powder",
+  "2 tbsp capsicum (finely chopped)",
+  "¼ tsp cumin powder / jeera powder",
+  "¼ tsp garam masala",
+  "2 tbsp tomato sauce",
+  "¼ tsp aamchur / dry mango powder",
+  "2 tbsp coriander leaves (finely chopped)",
+  "¼ tsp salt",
+  "6 slices bread (white / brown)",
+  "3 tsp green chutney",
+  "butter for roasting"
+ ],
+ "steps": [
+  "firstly, in a large mixing bowl take 1 cup grated paneer.",
+  "add in 2 tbsp capsicum, ½ tsp ginger garlic paste, ½ tsp chilli powder, ¼ tsp cumin powder, ¼ tsp garam masala, ¼ tsp aamchur, 2 tbsp tomato sauce, 2 tbsp coriander leaves and ¼ tsp salt.",
+  "combine well making sure all the spices are mixed well.",
+  "now take bread slice and trim the edges.",
+  "with the help of rolling pin, roll the bread as thin as possible.",
+  "spread ½ tsp of green chutney.",
+  "now take a tbsp of prepared paneer stuffing, and roll it into cylindrical shape.",
+  "place the paneer stuffing over bread and roll tight.",
+  "further, heat a pan with some butter and roast bread roll.",
+  "also brush more butter over paneer bread roll and roast all sides.",
+  "keep turning, making sure to roast all the sides.",
+  "finally, serve paneer bread roll with green chutney and tomato sauce."
+ ]
+}

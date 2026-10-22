@@ -1,0 +1,27 @@
+{
+ "id": "blog-06",
+ "url": "https://mexicanmademeatless.com/tlacoyos-recipe/",
+ "source": "Mexican Made Meatless",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "How To Make Bean Tlacoyos (Mexican Street Food Recipe) | Mexican Made Meatless™",
+ "recipeYield": "7 to 9 Servings",
+ "prepTime": "PT25M",
+ "cookTime": "PT15M",
+ "totalTime": "PT40M",
+ "ingredients": [
+  "blue corn masa",
+  "water",
+  "oil",
+  "salt",
+  "baking powder",
+  "refried black beans",
+  "cactus salad",
+  "salsa",
+  "sour cream",
+  "cheese"
+ ],
+ "steps": [
+  "Make the masa then shape and fill the tlacoyos. Cook on a hot pan then top with the nopales, salsa, sour cream, and cheese. Serve right away. "
+ ]
+}

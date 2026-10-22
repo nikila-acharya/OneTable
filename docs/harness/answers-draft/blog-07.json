@@ -1,0 +1,20 @@
+{
+ "id": "blog-07",
+ "url": "https://mexicanmademeatless.com/naranjada-recipe/",
+ "source": "Mexican Made Meatless",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Naranjada Recipe (Authentic Mexican Sparkling Orange Drink) | Mexican Made Meatless™",
+ "recipeYield": "6 servings",
+ "prepTime": "PT0H10M",
+ "cookTime": "PT0H0M",
+ "totalTime": "PT0H10M",
+ "ingredients": [
+  "fresh oranges",
+  "sparkling water",
+  "ice cubes"
+ ],
+ "steps": [
+  "Juice the oranges and pour the juice into a pitcher with ice cubes and orange slices. Pour in sparkling water, gently mix. Serve with lots of ice cubes."
+ ]
+}

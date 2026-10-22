@@ -1,0 +1,37 @@
+{
+ "id": "blog-05",
+ "url": "https://dorastable.com/caldo-tlalpeno-recipe/",
+ "source": "Dora's Table",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Vegan Caldo Tlalpeño Recipe",
+ "recipeYield": "['4', '4 servings']",
+ "prepTime": "",
+ "cookTime": "PT25M",
+ "totalTime": "PT25M",
+ "ingredients": [
+  "1/2 cup Diced, white onion",
+  "3 cloves Garlic, minced",
+  "10 cups Vegetable Stock",
+  "2 sprigs Cilantro, (fresh)",
+  "1/4 cup Rice, (long grain)",
+  "1 cup Potatoes, (diced)",
+  "3/4 cup Carrots, (diced)",
+  "1 1/2 cups Zucchini, (diced)",
+  "1 cup Chickpeas, (canned, drained)",
+  "1 ea. Chipotle chile, (adobo, chopped)",
+  "1/2 Avocado, (cut into cubes)",
+  "1 Lime, (cut onto quarters)"
+ ],
+ "steps": [
+  "Heat a large pot to medium-low heat. Add 1/4 of water (or 1 tbsp. oil), add onions and sweat for 3-4 minutes until tender and translucent. Add garlic and let cook for 1 more minute",
+  "Pour in vegetable stock and cilantro sprigs in a large pot, and bring to a simmer.",
+  "Add rice and simmer for 4 minutes.",
+  "Add potatoes and simmer for 4 minutes.",
+  "Add carrots and simmer for 4 minutes.",
+  "Add chipotle in adobo and zucchini and simmer for 5 minutes.",
+  "Add chickpeas and simmer for 6-7 minutes or until all the vegetables and rice are tender.",
+  "Season with salt and pepper.",
+  "Serve with avocado cubes and lime wedges."
+ ]
+}

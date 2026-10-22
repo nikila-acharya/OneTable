@@ -1,0 +1,34 @@
+{
+ "id": "blog-09",
+ "url": "https://plantbasedonabudget.com/alphabet-soup-recipe/",
+ "source": "Plant-Based on a Budget",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Alphabet Soup Recipe",
+ "recipeYield": "['4', '4 - 6']",
+ "prepTime": "PT5M",
+ "cookTime": "PT20M",
+ "totalTime": "PT25M",
+ "ingredients": [
+  "1 tablespoon of olive oil",
+  "1 yellow onion (diced)",
+  "1 tablespoon of garlic powder",
+  "2 teaspoons of Italian seasoning",
+  "1 (15-ounce) can of diced tomatoes (in their juices)",
+  "7 cups water",
+  "2 low-sodium vegetable bouillon cubes",
+  "1 pound of frozen mixed vegetables",
+  "2 cups alphabet pasta",
+  "1 teaspoon salt (plus more to taste)",
+  "½ teaspoon black pepper"
+ ],
+ "steps": [
+  "In a large pot with a lid, heat the oil over medium-high heat.",
+  "Add in the onions and cook until fragrant.",
+  "Add in the garlic powder, Italian seasoning, mix well for 5 seconds, and quickly add the diced tomatoes.",
+  "Add the water, bouillon cubes, and mixed vegetables. Bring to a boil, lower the heat to a simmer, and cook for 10 minutes.",
+  "Add the pasta, salt, and pepper. Mix well and cook for 5 minutes. Turn off the heat, cover with the lid, and allow it to sit undisturbed for 5 minutes.",
+  "Uncover, mix, taste, and check to see if the pasta is done. If it is still slightly raw, cover the pot with the lid and allow it to sit for a few more minutes.",
+  "Serve immediately."
+ ]
+}

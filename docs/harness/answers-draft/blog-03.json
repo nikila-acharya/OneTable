@@ -1,0 +1,22 @@
+{
+ "id": "blog-03",
+ "url": "https://sweetpotatosoul.com/gremolata-recipe/",
+ "source": "Sweet Potato Soul",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Gremolata",
+ "recipeYield": "['8']",
+ "prepTime": "PT5M",
+ "cookTime": "",
+ "totalTime": "PT5M",
+ "ingredients": [
+  "½ cup parsley (washed, dried, and finely chopped)",
+  "2 cloves garlic (minced or grated)",
+  "1 tbsp lemon zest (from about 1 lemon)",
+  "½ tsp sea salt or maldon salt",
+  "⅓ cup good quality extra virgin olive oil (optional)"
+ ],
+ "steps": [
+  "Combine ingredients in a bowl and stir. Season to taste with more salt."
+ ]
+}

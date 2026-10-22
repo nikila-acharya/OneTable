@@ -1,0 +1,25 @@
+{
+ "id": "blog-10",
+ "url": "https://www.piloncilloyvainilla.com/papas-con-chorizo-vegan-recipe-2/",
+ "source": "Piloncillo & Vainilla",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Papas con chorizo, receta vegana",
+ "recipeYield": "['4', '4 personas']",
+ "prepTime": "PT10M",
+ "cookTime": "",
+ "totalTime": "PT30M",
+ "ingredients": [
+  "2 papas medianas (peladas y cortadas en dados)",
+  "1/2 libra de chorizo a la mexicana (sin tripas)",
+  "1/2 cebolla blanca (cortada en dados)",
+  "sal al gusto"
+ ],
+ "steps": [
+  "En un sartén grande, cocine el chorizo a fuego medio, rompiéndolo en trozos pequeños, hasta que esté dorado y crujiente.",
+  "Retira del sartén y reservar.",
+  "Añade las papas cortadas en dados a la sartén con una pizca de sal y dejar que se doren por un lado, remover y cocinar hasta que se ablanden, unos 3-5 minutos.",
+  "deben estar tiernos y bien cocidos.",
+  "Añade la cebolla picada y dejar que se dore; añadir el chorizo, y probar de sazón."
+ ]
+}
