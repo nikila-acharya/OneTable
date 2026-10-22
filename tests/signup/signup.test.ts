@@ -81,6 +81,7 @@ describe.skipIf(!hasDb)("WP-1.6 onboarding submit route (live DB)", () => {
   });
   afterAll(async () => {
     session.householdId = null;
+    for (const id of created) await eraseHousehold(db, id);
   });
 
   function draftWith(name: string): OnboardingDraft {
