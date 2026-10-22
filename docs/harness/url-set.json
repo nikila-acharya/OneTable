@@ -163,7 +163,7 @@
   }
  ],
  "blog_count": 40,
- "social_pending": 10,
+ "social_pending": 9,
  "excluded": [
   "Rainbow Plant Life (no verified recipe page)",
   "Deliciously Ella (no verified recipe page)",
@@ -174,5 +174,15 @@
   "Chef Priyanka (no recipe URLs)",
   "Chutneylife (blocked, 403)",
   "Giuseppe Federici (Instagram only)"
- ]
+ ],
+ "social_posts": [
+  {
+   "platform": "instagram",
+   "type": "reel",
+   "url": "https://www.instagram.com/reel/DdZ02t-TBa6/",
+   "source": "owner's saved collection",
+   "fetched": false
+  }
+ ],
+ "social_received": 1
 }
