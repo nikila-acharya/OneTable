@@ -156,6 +156,25 @@ export default function OnboardingApp() {
   }, [draft, update]);
 
   const finished = draft.finishedAt !== null;
+
+  // The Done screen shows what the server stored, not just the browser draft.
+  const [saved, setSaved] = useState<{ householdName: string; memberNames: string[] } | null>(null);
+  useEffect(() => {
+    if (!finished) return;
+    let cancelled = false;
+    fetch("/api/onboarding/summary")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: unknown) => {
+        const s = j as { householdName?: unknown; memberNames?: unknown } | null;
+        if (!cancelled && s && typeof s.householdName === "string" && Array.isArray(s.memberNames)) {
+          setSaved({ householdName: s.householdName, memberNames: s.memberNames as string[] });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [finished]);
   const meta = FLOW_STEPS.find((s) => s.n === (finished ? 6 : draft.step))!;
 
   return (
@@ -206,7 +225,7 @@ export default function OnboardingApp() {
       )}
 
       {finished ? (
-        <Done draft={draft} onReopen={reopenReview} onStartOver={startOver} />
+        <Done draft={draft} onReopen={reopenReview} onStartOver={startOver} saved={saved} />
       ) : (
         <div className="ot-screen" key={draft.step}>
           {draft.step === 1 && (
