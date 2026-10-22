@@ -1,0 +1,38 @@
+{
+ "id": "blog-28",
+ "url": "https://thehappypear.ie/plant-based-and-vegan-recipes/squash-soup/",
+ "source": "The Happy Pear",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Squash Soup",
+ "recipeYield": "['6', '6 Servings (6 Hungry People)']",
+ "prepTime": "",
+ "cookTime": "",
+ "totalTime": "PT20M",
+ "ingredients": [
+  "3 cloves of garlic",
+  "1 onion",
+  "2 carrots",
+  "1 medium butternut squash (800 g – 1 kg)",
+  "1 x 400 ml tin of low-fat coconut milk",
+  "2 litres of vegetable stock",
+  "2 tsp salt",
+  "1 tsp black pepper",
+  "Chilli flakes (to taste)",
+  "Roasted pumpkin seeds (for garnish)"
+ ],
+ "steps": [
+  "Prep the vegetables by finely slicing the garlic and onion.",
+  "Peel and chop the butternut squash and carrots into equal-sized pieces (they can be rough since the soup will be blended).",
+  "Heat a large non-stick pot on high heat.",
+  "Once hot, add the sliced onion and fry for about 4 minutes until soft, stirring occasionally. If it starts to stick, add 3-4 tablespoons of water to deglaze the pan.",
+  "Add the minced garlic and fry for a further minute until fragrant.",
+  "Add the roughly chopped carrots and butternut squash to the pan, seasoning with 2 tsp of salt and adding a couple of sprigs of fresh thyme.",
+  "Pour in the low-fat coconut milk and 2 litres of vegetable stock, then add 1 tsp of black pepper.",
+  "Bring the mixture to a boil, then reduce the heat.",
+  "Taste the soup and adjust the seasoning with additional salt and black pepper if needed.",
+  "Blend the soup until smooth using an immersion blender or food processor.",
+  "Ladle the soup into bowls and top with toasted pumpkin seeds and a sprinkle of chilli flakes.",
+  "Enjoy!"
+ ]
+}

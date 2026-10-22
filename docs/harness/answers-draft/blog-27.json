@@ -1,0 +1,24 @@
+{
+ "id": "blog-27",
+ "url": "https://plantyou.com/kale-chips-recipe/",
+ "source": "PlantYou",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "Cheesy Vegan Kale Chips (Oil Free)",
+ "recipeYield": "['2']",
+ "prepTime": "PT10M",
+ "cookTime": "PT30M",
+ "totalTime": "",
+ "ingredients": [
+  "7 cups kale",
+  "1 tsp paprika",
+  "1/4 cup nutritional yeast",
+  "2 tsp apple cider vinegar",
+  "1 tsp garlic salt"
+ ],
+ "steps": [
+  "Preheat the oven to 300F and line a baking sheet with parchment paper or a silicone mat.",
+  "Chop your kale into bite sized pieces and place in a bowl, along with the rest of the ingredients.",
+  "Toss with your hands until covered, the spread out onto the mat. Bake for 25 to 30 minutes until crispy."
+ ]
+}

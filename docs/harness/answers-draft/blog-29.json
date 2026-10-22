@@ -1,0 +1,40 @@
+{
+ "id": "blog-29",
+ "url": "https://thehappypear.ie/plant-based-and-vegan-recipes/5-minute-dahl/",
+ "source": "The Happy Pear",
+ "status": "DRAFT - unverified, a person must check against the page",
+ "draft_from": "schema.org Recipe JSON-LD published on the page",
+ "name": "5 Minute Dahl",
+ "recipeYield": "['3', '3 servings']",
+ "prepTime": "PT1M",
+ "cookTime": "PT4M",
+ "totalTime": "PT5M",
+ "ingredients": [
+  "400 g chickpeas (tin of cooked chickpeas)",
+  "400 g cooked lentils (tin)",
+  "3 cloves garlic",
+  "20 g small nub of ginger",
+  "5 scallions/spring onions",
+  "2 tbsp oil",
+  "50 g baby spinach",
+  "400 g coconut milk (tin)",
+  "½ lime or lemon (juice)",
+  "15 g fresh coriander",
+  "10 cherry tomatoes",
+  "2 tbsp curry powder",
+  "1 tsp salt (adjust to taste)",
+  "2 tsp ground cumin",
+  "½ tsp turmeric",
+  "½ tsp black pepper",
+  "2 tbsp tamari or soy sauce",
+  "3 wholemeal pitta breads (toasted to serve)"
+ ],
+ "steps": [
+  "Drain and rinse the chickpeas and lentils. Peel and finely chop the garlic and ginger, chop the scallions, and halve the cherry tomatoes. Pick the coriander leaves and finely chop the stalks.",
+  "Heat the oil in a large non-stick pan over high heat. Add the garlic and ginger to the pan, then reduce the heat to medium. Cook for 2 minutes, stirring occasionally.",
+  "Add the scallions, cherry tomatoes, coriander stalks, and 1 tsp of salt to the pan. Cook for a further minute.",
+  "Add the coconut milk, lentils, and chickpeas. Stir well. Then, add the curry powder, ground cumin, turmeric, remaining salt, black pepper, tamari/soy sauce, and lime juice. Bring to a boil, then reduce to a simmer for 5 minutes.",
+  "A few minutes before serving, add the spinach to wilt. Taste and adjust seasoning if needed.",
+  "Serve with toasted pitta breads, fresh coriander, and chilli flakes, if desired. Enjoy!"
+ ]
+}
