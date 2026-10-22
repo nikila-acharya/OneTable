@@ -34,5 +34,10 @@ Date: 2026-10-21 - Branch: build/m1-exit - Milestone 1 (PRD Section 14, WP-1.1 t
 - Sign-up has no email verification or rate limiting (needed before beta).
 - The Figma Dev Mode token check (ADR-003) still needs owner access.
 
-## Decision needed from the owner
+## Owner decision (2026-10-21)
+- **M1 accepted as exited.**
+- **Gate A, interview part: PASS.** The owner's finding: most saved recipes live on blogs or on the user's social media profiles.
+- **Gate A, parse-accuracy part: OPEN.** Needs the WP-2.6 harness on 50 real URLs (owner provides the list).
+
+## Decision needed from the owner (answered)
 Accept M1 as exited, and approve the demo, so Milestone 2 (content pool and extraction) can start. Milestone 2 has Gate A: parse accuracy of at least 85% on core fields, and the owner's interview finding that most saved recipes live on blogs.
