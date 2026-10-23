@@ -9,6 +9,9 @@ describe("cleanText entities", () => {
     expect(cleanText("jalape&ntilde;o &aacute;&eacute;&oacute;")).toBe("jalape\u00F1o \u00E1\u00E9\u00F3");
     expect(cleanText("salt &ndash; to taste&hellip;")).toBe("salt \u2013 to taste\u2026");
   });
+  it("decodes the degree and ordinal signs and common punctuation used on Spanish and other pages", () => {
+    expect(cleanText("400&ordm;F, 1&ordf;, &iquest;qu&eacute;?")).toBe("400\u00BAF, 1\u00AA, \u00BFqu\u00E9?");
+  });
   it("decodes numeric entities too, and leaves unknown names as written", () => {
     expect(cleanText("it&#8217;s &#038; &zzzz;")).toBe("it\u2019s & &zzzz;");
   });

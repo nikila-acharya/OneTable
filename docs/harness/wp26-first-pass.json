@@ -2,18 +2,12 @@
  "pages": 40,
  "fetched_ok": 38,
  "parsed": 38,
- "passed_first_pass": 32,
+ "passed_first_pass": 33,
  "flagged": [
   {
    "id": "blog-03",
    "flags": [
     "steps_under_2_check_count"
-   ]
-  },
-  {
-   "id": "blog-11",
-   "flags": [
-    "step_not_on_page"
    ]
   },
   {
