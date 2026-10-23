@@ -1,11 +1,11 @@
 "use client";
 
 /** Manual entry form (CP02): used when a page cannot be read. Prefilled with the link when there is one. */
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function ManualRecipePage() {
+function ManualRecipeForm() {
   const params = useSearchParams();
   const [title, setTitle] = useState("");
   const [ingredients, setIngredients] = useState("");
@@ -54,5 +54,13 @@ export default function ManualRecipePage() {
         <button type="submit">Save to my recipe box</button>
       </form>
     </main>
+  );
+}
+
+export default function ManualRecipePage() {
+  return (
+    <Suspense fallback={<main><p>Loading…</p></main>}>
+      <ManualRecipeForm />
+    </Suspense>
   );
 }
