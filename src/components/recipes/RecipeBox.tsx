@@ -1,4 +1,5 @@
 /** The recipe box list. Private to the household; recipes waiting for a check are counted with a link. */
+import Link from "next/link";
 import { OtCard } from "@/components/ui/base";
 
 export interface BoxListItem {
@@ -18,9 +19,9 @@ export function RecipeBox({ items, waitingForCheck }: { items: BoxListItem[]; wa
 
       {waitingForCheck > 0 ? (
         <p>
-          <a href="/recipes/review">
+          <Link href="/recipes/review">
             {waitingForCheck} {waitingForCheck === 1 ? "recipe" : "recipes"} to check before {waitingForCheck === 1 ? "it joins" : "they join"} your box
-          </a>
+          </Link>
         </p>
       ) : null}
 
