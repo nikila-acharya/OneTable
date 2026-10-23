@@ -19,3 +19,10 @@ The owner's interview finding: most saved recipes live on blogs or on the user's
 - **Owner spot-check (2026-10-23):** blog-02, blog-04, blog-16, blog-20 and blog-36 checked by the owner; no problems found.
 - **Open, does not block the gate:** re-check of blog-11 (no card markers, missed items not countable; all fields on page); blog-26 and blog-27 (crawl-delay 600 s, policy skip).
 - **Reviewers:** the hand check was done by AI subagents reading each live page. Results are in docs/harness/wp26-review.json (counts and verdicts only).
+
+## Gate A: blog-11 excluded (owner decision 2026-10-23)
+
+- Owner excluded blog-11 from the measure (no ingredient markers on that page, so missed items cannot be counted).
+- Denominator: 39 URLs. Blog-26 and blog-27 (unparsed) remain counted as misses.
+- Result: title 35/39, ingredients 35/39, steps 35/39. Mean 89.7%, at or above 85%. Gate A parse-accuracy: PASS.
+- Owner spot-check of blog-02, blog-04, blog-16, blog-20 and blog-36: no problems found.

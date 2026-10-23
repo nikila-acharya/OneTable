@@ -432,5 +432,24 @@
    "blog-36"
   ],
   "result": "all five checked by owner: no problems found"
+ },
+ "gate_a_measure_excluding_blog_11": {
+  "date": "2026-10-23",
+  "decided_by": "owner",
+  "denominator": 39,
+  "title": {
+   "pass": 35,
+   "of": 39
+  },
+  "ingredients": {
+   "pass": 35,
+   "of": 39
+  },
+  "steps": {
+   "pass": 35,
+   "of": 39
+  },
+  "mean": 0.897,
+  "note": "blog-26 and blog-27 (unparsed) remain counted as misses"
  }
 }
