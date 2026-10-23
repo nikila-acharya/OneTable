@@ -889,6 +889,13 @@ export const recipeNutrients = pgTable('recipe_nutrients', {
 
 
 
+/** RE03: local cache of USDA FoodData Central search responses, keyed by the normalised query. */
+export const fdcCache = pgTable('fdc_cache', {
+  query: text('query').primaryKey(),
+  foods: jsonb('foods').$type<unknown[]>().notNull(),
+  fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Simple no-recipe foods (fruit, yogurt, toast) usable directly in slots. */
 
 export const foodItem = pgTable(
@@ -1668,6 +1675,7 @@ export const schema = {
   recipeNutrients,
 
   foodItem,
+  fdcCache,
 
   allergenConfirmation,
 

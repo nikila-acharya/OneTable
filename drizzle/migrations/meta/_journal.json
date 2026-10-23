@@ -43,6 +43,13 @@
       "when": 1792700753662,
       "tag": "0005_zippy_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792769532985,
+      "tag": "0006_curved_king_bedlam",
+      "breakpoints": true
     }
   ]
 }
