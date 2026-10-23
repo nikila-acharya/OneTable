@@ -2,8 +2,8 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
-import { household, recipeIngredient, recipeNutrients } from "../../db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { fdcCache, household, recipeIngredient, recipeNutrients } from "../../db/schema";
 import { openDb, type Db } from "../../db/index";
 import { eraseHousehold } from "../../src/lib/consent/erase";
 import { saveParsedRecipe, RecipeNotFoundError } from "../../src/lib/recipes/review";
@@ -50,6 +50,8 @@ describe.skipIf(!hasDb)("recipe nutrition mapping (live DB)", () => {
     const rid = await saveParsedRecipe(db, hid, { fields: FIELDS, confidence: {}, unsure: [], sourceUrl: "https://blog.example.test/bowl", parseMethod: "markup" });
     const { client, calls } = fakeClient();
 
+    // start from an empty cache for these queries, so the first run reaches the (fake) network
+    await db.delete(fdcCache).where(inArray(fdcCache.query, ["chickpeas", "soy milk", "olive oil"]));
     const first = await mapRecipeNutrition(db, client, hid, rid, 2);
     expect(calls.sort()).toEqual(["chickpeas", "olive oil", "soy milk"]);
     expect(first.matchedLines).toBe(3);
