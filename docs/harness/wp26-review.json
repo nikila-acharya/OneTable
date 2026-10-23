@@ -421,5 +421,16 @@
    "note": "Match"
   }
  ],
- "recheck": "2026-10-23: blog-16 ingredients now pass (count matches); blog-11 unchanged (missed items not countable)."
+ "recheck": "2026-10-23: blog-16 ingredients now pass (count matches); blog-11 unchanged (missed items not countable).",
+ "owner_spot_check": {
+  "date": "2026-10-23",
+  "pages": [
+   "blog-02",
+   "blog-04",
+   "blog-16",
+   "blog-20",
+   "blog-36"
+  ],
+  "result": "all five checked by owner: no problems found"
+ }
 }
