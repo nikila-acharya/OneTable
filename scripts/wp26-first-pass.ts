@@ -13,7 +13,13 @@ import { cleanPageText } from "../src/lib/recipes/llm-parser";
 const root = process.cwd();
 const set = JSON.parse(readFileSync(join(root, "docs/harness/url-set.json"), "utf8")) as { blog_pages: { url: string }[] };
 const fetcher = createFetcher({ fetchImpl: fetch, now: () => Date.now(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) });
-const alnum = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+// Glyph fractions map to a/b first, so "½" on the page matches "1/2" in the schema data.
+const FRACTIONS: [string, string][] = [["\u00BD", "1/2"], ["\u2153", "1/3"], ["\u2154", "2/3"], ["\u00BC", "1/4"], ["\u00BE", "3/4"], ["\u215B", "1/8"], ["\u215C", "3/8"], ["\u215D", "5/8"], ["\u215E", "7/8"]];
+const alnum = (s: string) => {
+  let x = s;
+  for (const [g, f] of FRACTIONS) x = x.split(g).join(f);
+  return x.toLowerCase().replace(/[^a-z0-9]/g, "");
+};
 
 async function main() {
   const rows: Record<string, unknown>[] = [];

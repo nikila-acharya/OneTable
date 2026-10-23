@@ -2,7 +2,7 @@
  "pages": 40,
  "fetched_ok": 38,
  "parsed": 38,
- "passed_first_pass": 22,
+ "passed_first_pass": 29,
  "flagged": [
   {
    "id": "blog-01",
@@ -23,24 +23,6 @@
    ]
   },
   {
-   "id": "blog-04",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
-   "id": "blog-05",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
-   "id": "blog-06",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
    "id": "blog-11",
    "flags": [
     "step_not_on_page"
@@ -49,8 +31,7 @@
   {
    "id": "blog-16",
    "flags": [
-    "ingredient_not_on_page",
-    "step_not_on_page"
+    "ingredient_not_on_page"
    ]
   },
   {
@@ -60,33 +41,9 @@
    ]
   },
   {
-   "id": "blog-22",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
-   "id": "blog-23",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
    "id": "blog-32",
    "flags": [
     "title_looks_like_seo_or_label"
-   ]
-  },
-  {
-   "id": "blog-33",
-   "flags": [
-    "ingredient_not_on_page"
-   ]
-  },
-  {
-   "id": "blog-34",
-   "flags": [
-    "ingredient_not_on_page"
    ]
   },
   {
