@@ -21,7 +21,7 @@ export interface SaveParsedInput {
   confidence: Record<string, number>;
   unsure: string[];
   sourceUrl: string;
-  parseMethod: "markup" | "llm";
+  parseMethod: "markup" | "llm" | "manual";
 }
 
 export interface ReviewRecipe {
@@ -52,8 +52,8 @@ export async function saveParsedRecipe(db: Db, householdId: string, input: SaveP
       .values({
         householdId,
         visibility: "household_private",
-        sourceUrl: input.sourceUrl,
-        sourceDomain: domainOf(input.sourceUrl),
+        sourceUrl: input.sourceUrl || null,
+        sourceDomain: input.sourceUrl ? domainOf(input.sourceUrl) : null,
         author: input.fields.author,
         title: input.fields.title || "Untitled recipe",
         prepMin: input.fields.prepMinutes,
