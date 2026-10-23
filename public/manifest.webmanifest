@@ -1,0 +1,18 @@
+{
+  "name": "OneTable",
+  "short_name": "OneTable",
+  "description": "Family meal planning",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#547b8f",
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
