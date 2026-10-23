@@ -1,35 +1,424 @@
 {
- "scope": "WP-2.6 first pass, flagged pages reviewed by hand against the visible page (AI reviewer; owner spot-checks 5)",
- "parsed_pages": 38,
- "passed_automatic_check": 33,
- "reviewed_by_hand": {
-  "blog-03": {
-   "verdict": "pass",
-   "note": "page method is one paragraph; schema has the same single step"
-  },
-  "blog-35": {
-   "verdict": "pass",
-   "note": "page method is one line; schema has the same single step"
-  },
-  "blog-16": {
-   "verdict": "pass_with_note",
-   "note": "content matches; schema uses tsp where the page writes teaspoon"
-  },
-  "blog-17": {
-   "verdict": "pass_with_note",
-   "note": "content matches; schema uses tbsp/tsp where the page writes tablespoon/teaspoon"
-  },
-  "blog-39": {
-   "verdict": "pass_with_note",
-   "note": "content matches; schema uses tbsp where the page writes tablespoon"
-  }
+ "scope": "WP-2.6 hand-check by AI reviewers (subagents reading each live page). Not yet spot-checked by the owner. Counts and verdicts only; no recipe text.",
+ "pages_total": 40,
+ "pages_parsed": 38,
+ "pages_unparsed": [
+  "blog-26",
+  "blog-27 (crawl-delay 600 s, skipped by policy)"
+ ],
+ "verdicts_over_38": {
+  "correct": 31,
+  "minor": 5,
+  "unverified": 1,
+  "wrong": 1
  },
- "fixed_this_round": [
-  "entity decoding (ordm and others) for blog-11 step"
+ "field_level_over_40": {
+  "title": {
+   "pass": 36,
+   "of": 40
+  },
+  "ingredients": {
+   "pass": 34,
+   "of": 40,
+   "fail": 2,
+   "unknown": 4
+  },
+  "steps": {
+   "pass": 35,
+   "of": 40,
+   "fail": 1,
+   "unknown": 4
+  },
+  "mean_core_field_accuracy_over_40": 0.875
+ },
+ "strict_all_core_fields_correct_over_40": 31,
+ "suggested_owner_spot_check": [
+  "blog-02",
+  "blog-04",
+  "blog-16",
+  "blog-20",
+  "blog-36"
  ],
- "not_yet_checked": [
-  "blog-26 and blog-27 (skipped: crawl-delay 600 s)",
-  "complete hand check for missed items on all 40 pages"
- ],
- "gate_a_accuracy_note": "Automatic check: 33 of 38 parsed pages pass; with the 5 hand-reviewed pages counted as passes, 38 of 38 parsed pages have text that appears on the page. This does not yet measure missed items. Gate A (≥85% core fields) stays open until the hand-checked answers exist."
+ "rows": [
+  {
+   "id": "blog-01",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Title carries SEO suffixes; parsed name is the recipe name"
+  },
+  {
+   "id": "blog-02",
+   "title_ok": true,
+   "verdict": "minor",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 7,
+   "steps_not_on_page": 0,
+   "note": "Recipe-card steps match; 7 body steps not parsed"
+  },
+  {
+   "id": "blog-03",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Single card step matches"
+  },
+  {
+   "id": "blog-04",
+   "title_ok": false,
+   "verdict": "minor",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Title in SEO-style wording, not the bare name"
+  },
+  {
+   "id": "blog-05",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "All match; quantities reformatted only"
+  },
+  {
+   "id": "blog-06",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "All match the recipe card"
+  },
+  {
+   "id": "blog-07",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "All match the recipe card"
+  },
+  {
+   "id": "blog-08",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Checked against body text; all present"
+  },
+  {
+   "id": "blog-09",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "All match the recipe card"
+  },
+  {
+   "id": "blog-10",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Stray card fragment present on page"
+  },
+  {
+   "id": "blog-11",
+   "title_ok": true,
+   "verdict": "unverified",
+   "ingredients_missed": null,
+   "ingredients_not_on_page": null,
+   "steps_missed": null,
+   "steps_not_on_page": null,
+   "note": "Page text truncated; quantities and final steps not visible"
+  },
+  {
+   "id": "blog-12",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-13",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-14",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-15",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-16",
+   "title_ok": false,
+   "verdict": "minor",
+   "ingredients_missed": null,
+   "ingredients_not_on_page": null,
+   "steps_missed": null,
+   "steps_not_on_page": null,
+   "note": "Title paraphrased from body; lists not verifiable (truncated)"
+  },
+  {
+   "id": "blog-17",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match; the not-on-page flag was spurious"
+  },
+  {
+   "id": "blog-18",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-19",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-20",
+   "title_ok": true,
+   "verdict": "minor",
+   "ingredients_missed": 1,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Optional spice in step 2 missing from parsed ingredients"
+  },
+  {
+   "id": "blog-21",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-22",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-23",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-24",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-25",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-28",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-29",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-30",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-31",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-32",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Title is the recipe name before the SEO suffix; match"
+  },
+  {
+   "id": "blog-33",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-34",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-35",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Single-step method matches"
+  },
+  {
+   "id": "blog-36",
+   "title_ok": true,
+   "verdict": "wrong",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 1,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Water quantity not on page; reviewer's page extract was partial"
+  },
+  {
+   "id": "blog-37",
+   "title_ok": true,
+   "verdict": "minor",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Page numbering skips step 2, not visible in extract"
+  },
+  {
+   "id": "blog-38",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  },
+  {
+   "id": "blog-39",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match; the parser flag was not reproduced"
+  },
+  {
+   "id": "blog-40",
+   "title_ok": true,
+   "verdict": "correct",
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
+   "steps_missed": 0,
+   "steps_not_on_page": 0,
+   "note": "Match"
+  }
+ ]
 }
