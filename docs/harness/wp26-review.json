@@ -18,10 +18,10 @@
    "of": 40
   },
   "ingredients": {
-   "pass": 34,
+   "pass": 35,
    "of": 40,
    "fail": 2,
-   "unknown": 4
+   "unknown": 3
   },
   "steps": {
    "pass": 35,
@@ -29,7 +29,7 @@
    "fail": 1,
    "unknown": 4
   },
-  "mean_core_field_accuracy_over_40": 0.875
+  "mean_core_field_accuracy_over_40": 0.883
  },
  "strict_all_core_fields_correct_over_40": 31,
  "suggested_owner_spot_check": [
@@ -148,7 +148,7 @@
    "ingredients_not_on_page": null,
    "steps_missed": null,
    "steps_not_on_page": null,
-   "note": "Page text truncated; quantities and final steps not visible"
+   "note": "Re-check: all 11 ingredients and 5 steps on page; no card markers, so missed items not countable."
   },
   {
    "id": "blog-12",
@@ -194,11 +194,11 @@
    "id": "blog-16",
    "title_ok": false,
    "verdict": "minor",
-   "ingredients_missed": null,
-   "ingredients_not_on_page": null,
+   "ingredients_missed": 0,
+   "ingredients_not_on_page": 0,
    "steps_missed": null,
    "steps_not_on_page": null,
-   "note": "Title paraphrased from body; lists not verifiable (truncated)"
+   "note": "Title paraphrased (fails title). Re-check: 20 card checkboxes = 20 parsed ingredients; 8 lines differ only by abbreviation; all 19 steps on page."
   },
   {
    "id": "blog-17",
@@ -420,5 +420,6 @@
    "steps_not_on_page": 0,
    "note": "Match"
   }
- ]
+ ],
+ "recheck": "2026-10-23: blog-16 ingredients now pass (count matches); blog-11 unchanged (missed items not countable)."
 }
