@@ -1,0 +1,35 @@
+{
+ "scope": "WP-2.6 first pass, flagged pages reviewed by hand against the visible page (AI reviewer; owner spot-checks 5)",
+ "parsed_pages": 38,
+ "passed_automatic_check": 33,
+ "reviewed_by_hand": {
+  "blog-03": {
+   "verdict": "pass",
+   "note": "page method is one paragraph; schema has the same single step"
+  },
+  "blog-35": {
+   "verdict": "pass",
+   "note": "page method is one line; schema has the same single step"
+  },
+  "blog-16": {
+   "verdict": "pass_with_note",
+   "note": "content matches; schema uses tsp where the page writes teaspoon"
+  },
+  "blog-17": {
+   "verdict": "pass_with_note",
+   "note": "content matches; schema uses tbsp/tsp where the page writes tablespoon/teaspoon"
+  },
+  "blog-39": {
+   "verdict": "pass_with_note",
+   "note": "content matches; schema uses tbsp where the page writes tablespoon"
+  }
+ },
+ "fixed_this_round": [
+  "entity decoding (ordm and others) for blog-11 step"
+ ],
+ "not_yet_checked": [
+  "blog-26 and blog-27 (skipped: crawl-delay 600 s)",
+  "complete hand check for missed items on all 40 pages"
+ ],
+ "gate_a_accuracy_note": "Automatic check: 33 of 38 parsed pages pass; with the 5 hand-reviewed pages counted as passes, 38 of 38 parsed pages have text that appears on the page. This does not yet measure missed items. Gate A (≥85% core fields) stays open until the hand-checked answers exist."
+}
