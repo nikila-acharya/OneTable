@@ -1,0 +1,66 @@
+{
+ "pages": 40,
+ "fetched_ok": 38,
+ "parsed": 38,
+ "passed_first_pass": 29,
+ "flagged": [
+  {
+   "id": "blog-01",
+   "flags": [
+    "title_looks_like_seo_or_label"
+   ]
+  },
+  {
+   "id": "blog-02",
+   "flags": [
+    "title_looks_like_seo_or_label"
+   ]
+  },
+  {
+   "id": "blog-03",
+   "flags": [
+    "steps_under_2_check_count"
+   ]
+  },
+  {
+   "id": "blog-11",
+   "flags": [
+    "step_not_on_page"
+   ]
+  },
+  {
+   "id": "blog-16",
+   "flags": [
+    "ingredient_not_on_page"
+   ]
+  },
+  {
+   "id": "blog-17",
+   "flags": [
+    "ingredient_not_on_page"
+   ]
+  },
+  {
+   "id": "blog-32",
+   "flags": [
+    "title_looks_like_seo_or_label"
+   ]
+  },
+  {
+   "id": "blog-35",
+   "flags": [
+    "steps_under_2_check_count"
+   ]
+  },
+  {
+   "id": "blog-39",
+   "flags": [
+    "ingredient_not_on_page"
+   ]
+  }
+ ],
+ "skipped": [
+  "blog-26",
+  "blog-27"
+ ]
+}
