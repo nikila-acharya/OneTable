@@ -20,7 +20,18 @@ export interface ParsedRecipe {
 
 export type ParseResult = { ok: true; recipe: ParsedRecipe } | { ok: false; reason: string };
 
-const ENTITY: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'" };
+// Named entities seen in real recipe pages (WP-2.6 first pass: &rsquo; and &frac12; were left undecoded).
+const ENTITY: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'",
+  rsquo: "\u2019", lsquo: "\u2018", rdquo: "\u201D", ldquo: "\u201C", sbquo: "\u201A", bdquo: "\u201E",
+  ndash: "\u2013", mdash: "\u2014", hellip: "\u2026", bull: "\u2022", middot: "\u00B7", deg: "\u00B0",
+  frac12: "\u00BD", frac14: "\u00BC", frac34: "\u00BE", frac13: "\u2153", frac23: "\u2154", times: "\u00D7",
+  copy: "\u00A9", reg: "\u00AE", trade: "\u2122", euro: "\u20AC", pound: "\u00A3", cent: "\u00A2",
+  aacute: "\u00E1", eacute: "\u00E9", iacute: "\u00ED", oacute: "\u00F3", uacute: "\u00FA", ntilde: "\u00F1",
+  Aacute: "\u00C1", Eacute: "\u00C9", Iacute: "\u00CD", Oacute: "\u00D3", Uacute: "\u00DA", Ntilde: "\u00D1",
+  agrave: "\u00E0", egrave: "\u00E8", ugrave: "\u00F9", ccedil: "\u00E7", auml: "\u00E4", ouml: "\u00F6",
+  uuml: "\u00FC", szlig: "\u00DF", acirc: "\u00E2", ecirc: "\u00EA", ocirc: "\u00F4", icirc: "\u00EE",
+};
 
 /** Decodes HTML entities (named and numeric) and collapses whitespace. */
 export function cleanText(s: unknown): string {
