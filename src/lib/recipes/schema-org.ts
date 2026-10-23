@@ -43,6 +43,16 @@ export function cleanText(s: unknown): string {
   return decoded.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Recipe titles from blogs often read "Recipe name | SEO words | site". The recipe name is the
+ * first part. A title without a pipe is kept whole (WP-2.6 first pass: 3 of 38 had SEO text).
+ */
+export function cleanRecipeTitle(value: unknown): string {
+  const whole = cleanText(value);
+  const first = whole.split(/\s+\|\s+/)[0]?.trim() ?? "";
+  return first.length >= 3 ? first : whole;
+}
+
 /** ISO 8601 duration (PT1H30M) to whole minutes; null when absent or unparseable. */
 export function isoDurationMinutes(value: unknown): number | null {
   if (typeof value !== "string") return null;
@@ -118,7 +128,7 @@ function toRecipe(node: Record<string, unknown>, sourceUrl: string): ParsedRecip
   let total = isoDurationMinutes(node.totalTime);
   if (total === null && (prep !== null || cook !== null)) total = (prep ?? 0) + (cook ?? 0) || null;
   return {
-    title: cleanText(node.name),
+    title: cleanRecipeTitle(node.name),
     ingredients,
     steps,
     yieldText: firstText(node.recipeYield),

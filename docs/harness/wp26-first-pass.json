@@ -2,20 +2,8 @@
  "pages": 40,
  "fetched_ok": 38,
  "parsed": 38,
- "passed_first_pass": 29,
+ "passed_first_pass": 32,
  "flagged": [
-  {
-   "id": "blog-01",
-   "flags": [
-    "title_looks_like_seo_or_label"
-   ]
-  },
-  {
-   "id": "blog-02",
-   "flags": [
-    "title_looks_like_seo_or_label"
-   ]
-  },
   {
    "id": "blog-03",
    "flags": [
@@ -38,12 +26,6 @@
    "id": "blog-17",
    "flags": [
     "ingredient_not_on_page"
-   ]
-  },
-  {
-   "id": "blog-32",
-   "flags": [
-    "title_looks_like_seo_or_label"
    ]
   },
   {
