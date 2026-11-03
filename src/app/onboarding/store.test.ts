@@ -69,10 +69,17 @@ describe("resume-on-close (§5.0 AC)", () => {
 });
 
 describe("steps and flow (§5.0)", () => {
-  it("step 5 is not part of this flow: 4 → 6 and back 6 → 4 (ADR 116)", () => {
-    expect(nextStep(4)).toBe(6);
-    expect(prevStep(6)).toBe(4);
+  it("step 5 joined the flow in WP-2.7: 4 → 5 → 6 and back (was 4 ↔ 6 per ADR 116)", () => {
+    expect(nextStep(4)).toBe(5);
+    expect(nextStep(5)).toBe(6);
+    expect(prevStep(6)).toBe(5);
+    expect(prevStep(5)).toBe(4);
     expect(nextStep(3)).toBe(4);
+  });
+
+  it("step 5 never blocks: onboarding can proceed with zero sources (§16.5 skip)", () => {
+    const d = newDraft();
+    expect(stepCanAdvance(d, 5)).toBe(true);
   });
 
   it("step gating follows the required fields", () => {

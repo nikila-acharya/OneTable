@@ -102,8 +102,21 @@ export function Review({
   const [visible, setVisible] = useState(draft.firstPlanRequestedAt ? 4 : 0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // WP-2.7: step 5 stores sources on the server; review reads them back
+  // (never the draft) so the numbers match what is actually saved.
+  const [sourceCards, setSourceCards] = useState<{ url: string; creatorName: string | null; chip: { kind: string; text: string } }[]>([]);
+  const sourcesLoaded = useRef(false);
+  useEffect(() => {
+    if (sourcesLoaded.current) return;
+    sourcesLoaded.current = true;
+    fetch("/api/sources")
+      .then((r) => (r.ok ? (r.json() as Promise<{ sources?: typeof sourceCards }>) : { sources: [] }))
+      .then((j) => setSourceCards(Array.isArray(j.sources) ? j.sources : []))
+      .catch(() => {});
+  }, []);
+
   const lines = [
-    "Using 0 sources · reading the starter library",
+    `Using ${sourceCards.length} source${sourceCards.length === 1 ? "" : "s"} · reading the starter library`,
     "Checking allergies against every recipe",
     `Planning ${mealCount || 28} meals (7 days × every slot)`,
     "Making sure nobody gets a meal they can't eat",
@@ -209,11 +222,22 @@ export function Review({
         ))}
       </ReviewSection>
 
-      <ReviewSection title="Sources">
-        <p className="ot-meta" style={{ margin: 0 }}>
-          None yet — we’ll plan from our recipe starter library. You can add sources in the next
-          version, any time from Household.
-        </p>
+      <ReviewSection title="Sources" onEdit={() => goTo(5)}>
+        {sourceCards.length === 0 ? (
+          <p className="ot-meta" style={{ margin: 0 }}>
+            None yet — we’ll plan from our recipe starter library. Add some any time from the
+            Household tab once your account is set up.
+          </p>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {sourceCards.slice(0, 6).map((s) => (
+              <li key={s.url} className="ot-meta">
+                {s.creatorName ?? s.url} — {s.chip.text}
+              </li>
+            ))}
+            {sourceCards.length > 6 && <li className="ot-meta">and {sourceCards.length - 6} more</li>}
+          </ul>
+        )}
       </ReviewSection>
 
       <div className="ot-primary">

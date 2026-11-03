@@ -1,37 +1,37 @@
 # OneTable - Build Status
 
-Last updated: 2026-10-20 (night) - `main` = 7d5aa4c (PR #8 WP-1.1 squash-merged)
+Last updated: 2026-11-03 - `main` = dd9ba5d (WP-2.5, PR #42); WP-2.7 on branch `build/wp-2.7-creators` (PR pending)
 
 ## Verified state (CI green on each merge)
-- WP-0.1 scaffold, WP-0.3 CI + rule-source/banned-copy gates (PRs #3, #4)
-- WP-0.2 Drizzle schema (33 tables) + migrations + NF-7 seed, live on Neon `onetable_dev`
-- WP-0.4 Auth.js v5 magic-link + credentials, one User per household, scrypt passwords, AES-256-GCM helper (PR #5)
-- WP-0.5 tool registry R/A/P/X + X-not-registered gate
-- WP-1.6 onboarding steps 1-4+6 UI (30 tests, axe AA, visual snapshots)
-- WP-1.1 consent (PV01/NF-P3): append-only log with trigger, gated writes, withdraw-deletes-in-request, PV03 erasure seam (PR #8)
-- WP-0.6 design tokens + base components (card, status chip, segmented, meal bar, tab bar), token contrast enforced by test (ADR-003), /dev/components gallery (PR #6)
-- Last verified: typecheck 0 errors; lint 0 errors (6 unused-var warnings in test helpers); vitest 15/15 files incl live DB; ci-scripts 16/16; next build OK; Playwright e2e green in CI.
+- M0 complete: WP-0.1 scaffold, WP-0.2 Drizzle schema (33 tables, Neon `onetable_dev`), WP-0.3 CI + rule-source/banned-copy gates, WP-0.4 Auth.js v5 + AES-256-GCM, WP-0.5 tool registry R/A/P/X, WP-0.6 tokens/components/gallery
+- M1 complete (owner accepted; ADR-011): WP-1.1 consent (append-only, gated writes, PV03 erasure), WP-1.2 members, WP-1.3 health (encrypted, flags-only), WP-1.4 SG01 gate + banner, WP-1.5 tiers + erasure, WP-1.6 onboarding steps 1-4+6 (PRs #8, #10, #11, #14-#21)
+- M2 nearly complete:
+  - WP-2.1 intake: SSRF-safe fetcher, robots honored, 1 req/s, pg-boss background imports (PR #24)
+  - WP-2.2 schema.org parser RE01 + entity/title fixes (PRs #25, #30, #31)
+  - WP-2.3 LLM fallback RE02 (verbatim rule, ADR-012) + review UI + recipe box + detail (PRs #26-#29)
+  - WP-2.4 ingredient parser + USDA FDC mapping RE03 + food_item seed (PRs #38, #39, #41; ADR-014)
+  - WP-2.5 manual entry, PWA share target CP02, copyright rules (PR #42)
+  - WP-2.6 harness: Gate A **PASS** - 89.7% per-field mean on 39 blog URLs (owner-approved measure, blog-11 excluded; spot-check clean, ADR-011). Final report `docs/harness/wp26-report.md`; markup-vs-LLM 38/0; blog-vs-social 40 importable / 10 save-and-route (ADR-015)
+  - WP-2.7 trusted creators CP04 + onboarding step 5 + terms note ADR-015 - branch `build/wp-2.7-creators`: platform detection (`src/lib/sources/platform.ts`), never-fetch guard at both choke points (fetcher + queue + single-link import), `/api/sources` + `[id]/website`, sources service with §16.5 chips, step-5 screen (paste, cards, one-time plain note, add-website, skip), review reads sources back from the server, YouTube reader seam behind `YOUTUBE_READER_ENABLED` (fail-safe off). Local gate: npm ci; tsc 0; lint 0 err (6 known warnings); vitest 57/57 files, 474 tests; next build OK.
+- Playwright e2e on CI: step-5 snapshot baseline must be regenerated on ubuntu (snapshot-baseline workflow dispatch) after the PR push, then committed.
 
-## Outstanding
-| WP | Task | Note |
-|---|---|---|
-| 0.6 | t_41af9511 | DONE (PR #6). Open: Figma Dev Mode value check, needs owner access (ADR-003) |
-| 1.1 Consent PV01 | t_ead0e1e4 | port wp/1.1-consent onto main (consent-gated writes) |
-| 1.2 Member CRUD | t_6e55ed11 | port wp/1.2-member-crud |
-| 1.3 Health enums/crypto | t_59eb60f2 | port wp/1.3-health; consume lib/crypto/encryption.ts |
-| 1.4 Condition gate SG01 | t_45112529 | port wp/1.4-condition-gate |
-| 1.5 Tiers + deletion | t_e8aabdb9 | compare wp/1.5-tier-deletion vs wp/1.5-tier-limits |
-| 1.6 Onboarding UI | t_6486cb4c | held by 1.4/1.5 |
-| 0.2 review | t_04d2d776 | PRD 10.3 cross-check still owed (handover session built it) |
+## Blocked on owner (PRD 13.3)
+| Item | Ask |
+|---|---|
+| ADR-015 | Approve or amend the social-platform terms note |
+| YouTube reader | Decide whether to enable `YOUTUBE_READER_ENABLED`: needs a Google Cloud project + API key (new external account) **and** a <30-day refresh/re-validation loop for description-derived copies (ADR-015 YouTube section, III.E.4/III.E.8 retention risk) |
+| Stray remote branches | Deletion needs owner OK (wp/0.1-scaffold, wp/1.2-member-crud, wp/1.4-condition-gate, wp-0.6-design-tokens) |
+| Figma Dev Mode | WP-0.6 value check still needs owner access (ADR-003) |
 
 ## Follow-ups (not blocking)
-- db/crypto.ts (WP-0.2 minimal helper) and lib/crypto/encryption.ts (WP-0.4 canonical) coexist; consolidate in WP-1.3.
-- 6 unused-variable lint warnings in ported test helpers; clean up in WP-0.6 pass.
-- Stash: stash@{0} = my mixed-tree backup from 2026-10-20; stash@{1} = co-agent WP-0.4 WIP (superseded by PR #5). Drop both once the owner confirms.
-- Stray remote branches (wp/0.1-scaffold, wp/1.2-member-crud, wp/1.4-condition-gate, wp-0.6-design-tokens): delete needs owner OK (13.3).
+- db/crypto.ts (WP-0.2 minimal helper) and lib/crypto/encryption.ts (canonical) still coexist; consolidate in the first M3 WP touching crypto.
+- 6 unused-variable lint warnings remain in test helpers.
+- WP-0.2 PRD §10.3 cross-check owed (t_04d2d776).
+- Stashes: stash@{0} mixed-tree backup 2026-10-20, stash@{1} co-agent WP-0.4 WIP - drop once owner confirms.
+- `docs/harness/url-set.json` and the owner's xlsx stay LOCAL (owner's saved links; harness scripts read them from disk).
 
 ## Environment facts
 - Dev DB: Neon `onetable_dev`; `.env.local` holds DATABASE_URL, ENCRYPTION_KEY, AUTH_SECRET (gitignored, never in chat/commits/logs).
 - GitHub `nikila-acharya/OneTable`; `nacharya0531` has write access (verified).
 - Kanban board `onetable`: dispatcher OFF, tasks unassigned, completion requires --result evidence.
-- ADR-001 dispatcher incident (Oct 16); ADR-002 co-agent handover (Oct 20).
+- ADR-001 dispatcher incident (Oct 16); ADR-002 co-agent handover (Oct 20); ADR-015 first social-terms note (Nov 2).

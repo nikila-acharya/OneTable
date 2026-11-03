@@ -675,3 +675,15 @@
 @media (min-width: 768px) {
   .ot-flow { max-width: 560px; padding-top: 10px; }
 }
+
+/* ---- WP-2.7 sources screen (step 5) ---- */
+.ot-field-label { display: block; font-size: 13px; font-weight: 500; color: var(--ink-soft); margin: 0 0 4px; }
+.ot-sources-paste { margin: 14px 0 10px; }
+.ot-sources-textarea { resize: vertical; min-height: 64px; }
+.ot-sources-rejects { margin: 8px 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); }
+.ot-sources-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.ot-sources-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ot-sources-card__url { word-break: break-all; margin: 6px 0 0; }
+.ot-sources-card__web { margin-top: 8px; }
+.ot-sources-explain { font-size: 14px; margin: 0 0 8px; }
+.ot-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--stone); color: var(--ink); font-size: 12px; font-weight: 500; }

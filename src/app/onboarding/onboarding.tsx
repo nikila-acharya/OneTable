@@ -7,10 +7,9 @@
  * the browser and returning resumes at the saved step with the data intact
  * (§5.0 AC).
  *
- * Step 5 (sources) is WP-2.7: it appears in the stepper as a marked "soon"
- * dot but is not reachable from this flow (ADR 116). The Meals screen's
- * Continue goes straight to Review, which shows the starter-library
- * fallback so onboarding can finish with zero sources (§5.0 AC).
+ * Step 5 (sources) is live since WP-2.7: Meals → Sources → Review. Sources
+ * live on the server (POST /api/sources), never in the draft (ADR 116 D1).
+ * Review shows the starter-library fallback when nothing was added (§5.0 AC).
  */
 
 "use client";
@@ -23,6 +22,7 @@ import {
   getDraftSnapshot,
   newDraft,
   saveDraft,
+  STEP_ORDER,
   subscribeDraft,
   syncMeals,
   type OnboardStep,
@@ -32,16 +32,17 @@ import { Welcome } from "./steps/welcome";
 import { Household } from "./steps/household";
 import { Members } from "./steps/members";
 import { Meals } from "./steps/meals";
+import { Sources } from "./steps/sources";
 import { Review } from "./steps/review";
 import { Done } from "./steps/done";
 
-/** Stepper model — matches design/prototype.html STEPS, including the "soon" source dot. */
-export const FLOW_STEPS: { n: OnboardStep | 5; label: string; title: string; soon?: boolean }[] = [
+/** Stepper model — matches design/prototype.html STEPS (step 5 live since WP-2.7). */
+export const FLOW_STEPS: { n: OnboardStep; label: string; title: string }[] = [
   { n: 1, label: "Welcome", title: "Welcome & privacy promise" },
   { n: 2, label: "Household", title: "Your household" },
   { n: 3, label: "Members", title: "Family members" },
   { n: 4, label: "Meals", title: "Meals to plan" },
-  { n: 5, label: "Sources", title: "Where your food comes from", soon: true },
+  { n: 5, label: "Sources", title: "Where your food comes from" },
   { n: 6, label: "Review", title: "Review & first plan" },
 ];
 
@@ -96,8 +97,7 @@ export default function OnboardingApp() {
   );
 
   const goBack = useCallback(() => {
-    // Back from step 6 lands on Meals: step 5 has no screen until WP-2.7 (ADR 116).
-    const order: OnboardStep[] = [1, 2, 3, 4, 6];
+    const order: OnboardStep[] = STEP_ORDER;
     const i = order.indexOf(draft.step);
     if (i > 0) update({ ...draft, step: order[i - 1] });
   }, [draft, update]);
@@ -194,22 +194,21 @@ export default function OnboardingApp() {
           <nav className="ot-dots" aria-label="Onboarding progress">
             {FLOW_STEPS.map((s) => {
               const active = s.n === draft.step;
-              const done = !active && !s.soon && (s.n as number) < draft.step;
-              const clickable = done && s.n !== 5;
+              const done = !active && (s.n as number) < draft.step;
+              const clickable = done;
               return (
                 <div
                   key={s.n}
-                  className={`ot-dot${active ? " ot-dot--active" : ""}${done ? " ot-dot--done" : ""}${s.soon ? " ot-dot--soon" : ""}`}
-                  title={s.soon ? "Arrives in M2 (WP-2.7)" : undefined}
+                  className={`ot-dot${active ? " ot-dot--active" : ""}${done ? " ot-dot--done" : ""}`}
                   {...(clickable ? { role: "button", tabIndex: 0 } : {})}
                   aria-current={active ? "step" : undefined}
-                  onClick={clickable ? () => goTo(s.n as OnboardStep) : undefined}
+                  onClick={clickable ? () => goTo(s.n) : undefined}
                   onKeyDown={
                     clickable
                       ? (e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            goTo(s.n as OnboardStep);
+                            goTo(s.n);
                           }
                         }
                       : undefined
@@ -240,6 +239,7 @@ export default function OnboardingApp() {
           {draft.step === 2 && <Household draft={draft} update={update} goTo={goTo} goBack={goBack} />}
           {draft.step === 3 && <Members draft={draft} update={update} goTo={goTo} goBack={goBack} />}
           {draft.step === 4 && <Meals draft={draft} update={update} goTo={goTo} goBack={goBack} />}
+          {draft.step === 5 && <Sources draft={draft} goTo={goTo} goBack={goBack} />}
           {draft.step === 6 && (
             <Review draft={draft} update={update} goTo={goTo} goBack={goBack} submitDraft={submitDraft} />
           )}

@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // The full suite runs many DB and jsdom files; these UI flows need headroom under load.
 vi.setConfig({ testTimeout: 60_000 });
 vi.mock("next-auth/react", () => ({ signIn: vi.fn(async () => ({ error: undefined })) }));
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import OnboardingApp from "./onboarding";
 import { STORAGE_KEY, newDraft, newMember, type OnboardingDraft } from "./store";
 
@@ -284,11 +284,14 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     fireEvent.click(packed);
     expect(storedDraft().meals[0]!.packedLunch).toBe("school");
 
-    // review (step 5 unreachable: Continue lands on Review, §5.0/ADR 116)
+    // step 5 (WP-2.7): Meals Continue lands on Sources, then Review
     fireEvent.click(screen.getByRole("button", { name: "Continue ›" }));
+    expect(await screen.findByText("Where your food comes from")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Skip for now: use our starter recipes ›" })).toBeTruthy(); // §16.5: skip always available
+    fireEvent.click(screen.getByRole("button", { name: "Skip for now: use our starter recipes ›" }));
     await screen.findByRole("heading", { name: /Review/ });
     expect(screen.queryByRole("heading", { name: /Where your family/ })).toBeNull();
-    expect(within(screen.getByRole("navigation", { name: "Onboarding progress" })).getByText("Sources")).toBeTruthy(); // "soon" source dot
+    expect(within(screen.getByRole("navigation", { name: "Onboarding progress" })).getByText("Sources")).toBeTruthy(); // real Sources dot (WP-2.7)
 
     // chips read "Never planned" and match stored allergies exactly (§5.0 AC)
     const stored = storedDraft().members[0]!.allergies;
@@ -347,5 +350,52 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     await screen.findByRole("group", { name: "Approval card preview" }); // no animation needed on resume
     await expectNeverChip("peanuts");
     expect(document.getElementById("stepnum")!.textContent).toBe("Step 6 of 6");
+  });
+
+  it("step 5 (WP-2.7): pasted links are saved to /api/sources and the social card offers Add website", async () => {
+    const posts: { url: string; body: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === "/api/sources" && init?.method === "POST") {
+          posts.push({ url, body: String(init.body ?? "") });
+          const card = {
+            id: "s1",
+            kind: "social_profile",
+            platform: "instagram",
+            url: "https://www.instagram.com/chef.nina/",
+            creatorName: "chef.nina",
+            chip: { kind: "neutral", text: "Linked — share posts to add recipes" },
+            needsWebsite: true,
+            websiteSourceId: null,
+          };
+          return new Response(JSON.stringify({ added: [card], rejected: [] }), { status: 201, headers: { "content-type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ sources: [] }), { status: 200, headers: { "content-type": "application/json" } });
+      }),
+    );
+
+    const d = newDraft();
+    d.accountCreated = true;
+    d.step = 5;
+    d.completed = [1, 2, 3, 4];
+    d.household.name = "Resume Household";
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+
+    render(<OnboardingApp />);
+    expect(await screen.findByText("Where your food comes from")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Your links"), { target: { value: "https://www.instagram.com/chef.nina" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add links" }));
+    await waitFor(() => expect(posts).toHaveLength(1));
+    expect(posts[0]!.body).toContain("instagram");
+
+    // card with platform badge + plain-words chip + the CP04 website action
+    expect(await screen.findByText("Linked — share posts to add recipes")).toBeTruthy();
+    expect(screen.getByText("Instagram")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add their website ›" })).toBeTruthy();
+    // with a saved source, Continue is the normal continue label (§16.5)
+    expect(screen.getByRole("button", { name: "Continue ›" })).toBeTruthy();
   });
 });

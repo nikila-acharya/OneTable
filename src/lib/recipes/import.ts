@@ -5,6 +5,7 @@
  */
 import type { Db } from "../db";
 import type { FetchOutcome } from "../intake/fetcher";
+import { classifyLink, isNeverFetchedHost } from "../sources/platform";
 import { parseSchemaOrgRecipe } from "./schema-org";
 import { parseWithLlm, type LlmClient, type ParsedFields } from "./llm-parser";
 import { saveParsedRecipe } from "./review";
@@ -41,6 +42,13 @@ export function isWebUrl(s: string): boolean {
 
 export async function importRecipeFromUrl(db: Db, deps: ImportDeps, householdId: string, url: string): Promise<ImportResult> {
   if (!isWebUrl(url)) return { status: "manual", reason: "That does not look like a web address. You can enter the recipe by hand.", prefill: { sourceUrl: "", title: "" } };
+  // ADR-015 / CP04: social platforms are never fetched. A user-shared post
+  // lands on the manual-entry form with the link kept (CP02 prefill rule);
+  // nothing goes to the network at all.
+  if (isNeverFetchedHost(new URL(url).hostname)) {
+    const cls = classifyLink(url);
+    return { status: "manual", reason: cls.note || "This platform does not let apps read its pages. You can enter the recipe by hand.", prefill: { sourceUrl: url, title: "" } };
+  }
   const page = await deps.fetchPage(url);
   if (page.status !== "ok") return { status: "skipped", reason: SKIP_WORDS[page.reason] ?? "We could not import this page." };
 

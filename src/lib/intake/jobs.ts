@@ -5,6 +5,7 @@
  */
 import { PgBoss } from "pg-boss";
 import { checkPublicUrl } from "./url";
+import { assertFetchable } from "../sources/guard";
 import type { createFetcher } from "./fetcher";
 
 export const IMPORT_QUEUE = "cp01-import";
@@ -36,6 +37,10 @@ export async function enqueueImport(
 ): Promise<{ ok: true; jobId: string } | { ok: false; reason: string }> {
   const check = checkPublicUrl(input.url);
   if (!check.ok) return { ok: false, reason: check.reason };
+  // ADR-015: a social-platform URL is refused before it is ever queued
+  // (second choke point, same guard as the fetcher).
+  const guard = assertFetchable(check.url);
+  if (!guard.ok) return { ok: false, reason: guard.reason || "The app does not read this platform." };
   const jobId = await boss.send(IMPORT_QUEUE, { householdId: input.householdId, url: check.url } satisfies ImportJobData);
   if (!jobId) return { ok: false, reason: "That link is already being imported." };
   return { ok: true, jobId };

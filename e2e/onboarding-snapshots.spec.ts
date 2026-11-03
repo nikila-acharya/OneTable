@@ -16,6 +16,7 @@ const SCREENS = [
   { key: "step-2", label: "section[aria-label=\"Your household\"]" },
   { key: "step-3", label: "section[aria-label=\"Family members\"]" },
   { key: "step-4", label: "section[aria-label=\"Meals to plan\"]" },
+  { key: "step-5", label: "section[aria-label=\"Where your food comes from\"]" },
   { key: "step-6", label: "section[aria-label=\"Review and first plan\"]" },
   { key: "done", label: "section[aria-label=\"Setup complete\"]" },
 ] as const;
