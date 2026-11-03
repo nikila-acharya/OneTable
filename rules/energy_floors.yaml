@@ -1,0 +1,48 @@
+# Energy floors (SG03, WP-3.3)
+# Hard lower bounds for daily energy intake by age and sex.
+# These values are PLACEHOLDERS (reviewed_by: null) until a registered dietitian reviews.
+# PRD 6.3 / SG03: adults have a hard daily energy floor; a plan below it is rejected.
+
+- id: SG03-energy-floor-adult-male
+  description: Adult male daily energy floor (placeholder)
+  applies_to: { age_gte: 19, sex: male }
+  floor_kcal: 1800
+  source:
+    name: "Placeholder — pending RD review"
+    url: "https://github.com/nikila-acharya/OneTable/docs/decisions/SG03-placeholder"
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null
+
+- id: SG03-energy-floor-adult-female
+  description: Adult female daily energy floor (placeholder)
+  applies_to: { age_gte: 19, sex: female }
+  floor_kcal: 1600
+  source:
+    name: "Placeholder — pending RD review"
+    url: "https://github.com/nikila-acharya/OneTable/docs/decisions/SG03-placeholder"
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null
+
+- id: SG03-energy-floor-teen-male
+  description: Teen male daily energy floor (maintenance for growth, placeholder)
+  applies_to: { age_gte: 14, age_lt: 19, sex: male }
+  floor_kcal: 2000
+  source:
+    name: "Placeholder — pending RD review"
+    url: "https://github.com/nikila-acharya/OneTable/docs/decisions/SG03-placeholder"
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null
+
+- id: SG03-energy-floor-teen-female
+  description: Teen female daily energy floor (maintenance for growth, placeholder)
+  applies_to: { age_gte: 14, age_lt: 19, sex: female }
+  floor_kcal: 1800
+  source:
+    name: "Placeholder — pending RD review"
+    url: "https://github.com/nikila-acharya/OneTable/docs/decisions/SG03-placeholder"
+  confidence: Guessing
+  reviewed_by: null
+  reviewed_on: null
