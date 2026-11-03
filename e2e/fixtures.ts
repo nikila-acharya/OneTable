@@ -102,7 +102,7 @@ function filled(step: OnboardStep, completed: OnboardStep[]): OnboardingDraft {
       budgetFeel: "balanced",
     },
     members: step === 1 ? [] : MEMBERS.map((m) => ({ ...m, homeFor: { ...m.homeFor } })),
-    meals: step === 4 || step === 6 ? MEALS.map((x) => ({ ...x })) : [],
+    meals: step === 4 || step === 5 || step === 6 ? MEALS.map((x) => ({ ...x })) : [],
     consent: CONSENTED,
   };
 }
@@ -114,6 +114,9 @@ export const SCREEN_SEEDS: Record<string, OnboardingDraft> = {
   "step-2": filled(2, [1]),
   "step-3": filled(3, [1, 2]),
   "step-4": filled(4, [1, 2, 3]),
+  // Step 5 (WP-2.7): sources screen; no session in e2e -> the household's
+  // list renders empty, the paste box is the stable state to capture.
+  "step-5": { ...filled(5, [1, 2, 3, 4]), accountCreated: true },
   // Step 6 with firstPlanRequestedAt set → Review renders the approval-card
   // phase directly (no animation timers), the state the prototype scrReview ends in.
   "step-6": { ...filled(6, [1, 2, 3, 4]), firstPlanRequestedAt: "2026-10-16T14:59:00.000Z" },

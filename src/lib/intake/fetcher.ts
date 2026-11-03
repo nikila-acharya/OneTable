@@ -3,6 +3,7 @@
  * a size cap, and HTML only. Injected fetch/clock/sleep make it testable.
  */
 import { isAllowed, parseRobots, USER_AGENT, type RobotsRules } from "./robots";
+import { assertFetchable } from "../sources/guard";
 
 export const MIN_INTERVAL_MS = 1000;
 export const MAX_BYTES = 2_000_000;
@@ -12,7 +13,7 @@ export const MAX_CRAWL_DELAY_SECONDS = 60;
 
 export type FetchOutcome =
   | { status: "ok"; url: string; body: string }
-  | { status: "skipped"; url: string; reason: "robots_disallowed" | "robots_unavailable" | "crawl_delay_too_long" | "not_html" | "too_large" | "http_error" | "network_error"; message: string };
+  | { status: "skipped"; url: string; reason: "social_not_read" | "robots_disallowed" | "robots_unavailable" | "crawl_delay_too_long" | "not_html" | "too_large" | "http_error" | "network_error"; message: string };
 
 export interface FetcherDeps {
   fetchImpl: typeof fetch;
@@ -21,6 +22,7 @@ export interface FetcherDeps {
 }
 
 const MESSAGES = {
+  social_not_read: "Social platforms do not let apps read their pages, so we skipped this link.",
   robots_disallowed: "The site's robots.txt does not allow this page, so we skipped it.",
   robots_unavailable: "The site's robots.txt could not be read right now, so we skipped it to be safe.",
   crawl_delay_too_long: "This site asks visitors to wait several minutes between requests, so we did not import from it.",
@@ -68,6 +70,10 @@ export function createFetcher(deps: FetcherDeps) {
 
   async function fetchPage(url: string): Promise<FetchOutcome> {
     const u = new URL(url);
+    // ADR-015 guard (the named choke point): social domains are never fetched,
+    // before even robots.txt.
+    const guard = assertFetchable(url);
+    if (!guard.ok) return { status: "skipped", url, reason: "social_not_read", message: guard.reason || MESSAGES.social_not_read };
     const rules = await robotsFor(u.origin);
     if (rules === "unavailable") return { status: "skipped", url, reason: "robots_unavailable", message: MESSAGES.robots_unavailable };
     const pathAndQuery = u.pathname + u.search;

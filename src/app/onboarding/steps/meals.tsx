@@ -127,7 +127,7 @@ export function Meals({
       })}
 
       <div className="ot-primary">
-        <OtButton full onClick={() => goTo(6)}>Continue ›</OtButton>
+        <OtButton full onClick={() => goTo(5)}>Continue ›</OtButton>
         <div className="ot-navrow">
           <OtButton kind="ghost" onClick={goBack}>‹ Back</OtButton>
         </div>

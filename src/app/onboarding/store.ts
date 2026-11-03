@@ -9,8 +9,9 @@
  * clearDraft) so the UI can be repointed at the server without touching the
  * screens.
  *
- * Step numbering follows ON01 exactly (1–6). Step 5 (sources) is built in
- * WP-2.7 and is NOT reachable from this flow; the review screen shows the
+ * Step numbering follows ON01 exactly (1–6). Step 5 (sources, WP-2.7) keeps
+ * its data on the server (`/api/sources`), not in the draft, so the draft
+ * shape never changed for it (ADR 116 D1); the review screen still shows the
  * starter-library fallback so onboarding can finish with zero sources
  * (AC §5.0).
  */
@@ -18,15 +19,16 @@
 export const STORAGE_KEY = "onetable:onboarding:v1";
 export const POLICY_VERSION = "2026-10-16";
 
-export type OnboardStep = 1 | 2 | 3 | 4 | 6;
+export type OnboardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
-export const STEP_ORDER: OnboardStep[] = [1, 2, 3, 4, 6];
+export const STEP_ORDER: OnboardStep[] = [1, 2, 3, 4, 5, 6];
 
 export const STEP_LABELS: Record<OnboardStep, string> = {
   1: "Welcome",
   2: "Your household",
   3: "Family members",
   4: "Meals to plan",
+  5: "Where your food comes from",
   6: "Review",
 };
 
@@ -306,6 +308,8 @@ export function stepCanAdvance(draft: OnboardingDraft, step: OnboardStep): boole
       return draft.members.some((m) => memberRequiredComplete(m));
     case 4:
       return anyMealPlanned(draft.meals);
+    case 5:
+      return true; // sources are optional — "Skip for now" is always available (§16.5)
     case 6:
       return true; // review is the terminal stub step
   }
