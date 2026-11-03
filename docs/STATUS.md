@@ -1,13 +1,15 @@
 # OneTable - Build Status
 
-**2026-11-03 16:14 UTC - M3 COMPLETE & GATED; M4 CRITICAL PATH ADVANCING**
+**2026-11-03 16:18 UTC - M4 CRITICAL PATH COMPLETE (WP-4.1 → 4.2 → 4.3)**
 
 - ✅ M3 exit: 52/52 tests, demo verified (100% own-source dinners, 0 allergen violations)
 - ✅ ADR-016: OpenRouter + Claude 3.5 Sonnet approved
-- ✅ WP-4.1: Runtime skeleton (11 tests) — OpenRouterClient, tool registry, AgentExecutionContext
+- ✅ WP-4.1: Runtime skeleton (11 tests) — OpenRouterClient, tool registry, AgentExecutionContext, parent-child delegation
 - ✅ WP-4.2: Safety Guardian (29 tests) — SG04 eating-disorder detection (7 vocabulary categories, 75%+ recall, ≤5% FP)
-- ⏳ **CRITICAL PATH**: WP-4.3 (Coordinator agent) starting now
-- **M4 tests so far**: 40/40 passing (11 WP-4.1 + 29 WP-4.2)
+- ✅ WP-4.3: Coordinator agent (25 tests) — request routing, agent orchestration, approval inbox, Guardian integration
+- ⏳ **PARALLEL AGENTS**: WP-4.4–4.10 (Setup, MealPlanner, Scout, Reviewer, Approval inbox, Event dispatcher, Autonomy settings)
+- ⏳ **M4 EVAL**: WP-4.11 (100% safety, Guardian 100% recall, red-team)
+- **M4 tests so far**: 65/65 passing (critical path complete)
 
 
 ## Verified state (CI green on each merge)
