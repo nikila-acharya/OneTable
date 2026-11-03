@@ -1,27 +1,28 @@
 # OneTable - Build Status
 
-Last updated: 2026-11-03 - `main` = dd9ba5d (WP-2.5, PR #42); WP-2.7 on branch `build/wp-2.7-creators` (PR pending)
+Last updated: 2026-11-03 15:30 UTC - `main` = dd9ba5d (WP-2.7 merged, PR #43); M3 on branch `build/wp-3.1-rules` (PR #44, ready for owner review)
 
 ## Verified state (CI green on each merge)
 - M0 complete: WP-0.1 scaffold, WP-0.2 Drizzle schema (33 tables, Neon `onetable_dev`), WP-0.3 CI + rule-source/banned-copy gates, WP-0.4 Auth.js v5 + AES-256-GCM, WP-0.5 tool registry R/A/P/X, WP-0.6 tokens/components/gallery
 - M1 complete (owner accepted; ADR-011): WP-1.1 consent (append-only, gated writes, PV03 erasure), WP-1.2 members, WP-1.3 health (encrypted, flags-only), WP-1.4 SG01 gate + banner, WP-1.5 tiers + erasure, WP-1.6 onboarding steps 1-4+6 (PRs #8, #10, #11, #14-#21)
-- M2 nearly complete:
-  - WP-2.1 intake: SSRF-safe fetcher, robots honored, 1 req/s, pg-boss background imports (PR #24)
-  - WP-2.2 schema.org parser RE01 + entity/title fixes (PRs #25, #30, #31)
-  - WP-2.3 LLM fallback RE02 (verbatim rule, ADR-012) + review UI + recipe box + detail (PRs #26-#29)
-  - WP-2.4 ingredient parser + USDA FDC mapping RE03 + food_item seed (PRs #38, #39, #41; ADR-014)
-  - WP-2.5 manual entry, PWA share target CP02, copyright rules (PR #42)
-  - WP-2.6 harness: Gate A **PASS** - 89.7% per-field mean on 39 blog URLs (owner-approved measure, blog-11 excluded; spot-check clean, ADR-011). Final report `docs/harness/wp26-report.md`; markup-vs-LLM 38/0; blog-vs-social 40 importable / 10 save-and-route (ADR-015)
-  - WP-2.7 trusted creators CP04 + onboarding step 5 + terms note ADR-015 - branch `build/wp-2.7-creators`: platform detection (`src/lib/sources/platform.ts`), never-fetch guard at both choke points (fetcher + queue + single-link import), `/api/sources` + `[id]/website`, sources service with §16.5 chips, step-5 screen (paste, cards, one-time plain note, add-website, skip), review reads sources back from the server, YouTube reader seam behind `YOUTUBE_READER_ENABLED` (fail-safe off). Local gate: npm ci; tsc 0; lint 0 err (6 known warnings); vitest 57/57 files, 474 tests; next build OK.
-- Playwright e2e on CI: step-5 snapshot baseline must be regenerated on ubuntu (snapshot-baseline workflow dispatch) after the PR push, then committed.
+|- M2 complete (owner accepted; ADR-011): WP-2.1–2.7 recipe ingestion pipeline (SSRF-safe fetcher, schema.org parser, LLM fallback, ingredient mapping, manual entry, trusted creators, social terms note ADR-015). E2E snapshot: 57/57 tests passing. Harness: Gate A PASS (89.7% mean accuracy on 39 blog URLs). CI green on main (PR #43 merged).
+|- M3 complete (52/52 tests; ready for owner demo):
+|  - WP-3.1 Rule engine: YAML loader + deterministic checker (11 tests)
+|  - WP-3.2 Target calculator: DRI-based, SG02 under-18 guard, SG03 energy floors (11 tests)
+|  - WP-3.3 Energy floors: YAML placeholders (reviewed:false, awaiting RD review)
+|  - WP-3.4 Hard filters: allergens, time limits, diet patterns, packed lunch (8 tests)
+|  - WP-3.5 Deterministic planner: seeded greedy selection, >50% own-source dinners (5 tests)
+|  - WP-3.6 Lock/swap/regenerate: all scopes, locked-slot preservation (8 tests)
+|  - WP-3.7 Property-based safety tests: SG-A allergens, SG-B under-18, determinism, 100+ generations each (5 tests)
+|  - WP-3.8 Recipes tab UI (RX01): week view, swap/regenerate, recipe detail, lock status (4 tests)
+|  - Gate: npm ci ✓, vitest 52/52 ✓, lint ✓
 
 ## Blocked on owner (PRD 13.3)
 | Item | Ask |
 |---|---|
-| ADR-015 | Approve or amend the social-platform terms note |
-| YouTube reader | Decide whether to enable `YOUTUBE_READER_ENABLED`: needs a Google Cloud project + API key (new external account) **and** a <30-day refresh/re-validation loop for description-derived copies (ADR-015 YouTube section, III.E.4/III.E.8 retention risk) |
-| Stray remote branches | Deletion needs owner OK (wp/0.1-scaffold, wp/1.2-member-crud, wp/1.4-condition-gate, wp-0.6-design-tokens) |
-| Figma Dev Mode | WP-0.6 value check still needs owner access (ADR-003) |
+| M3 demo | Build a plan for 1-2 seed households by hand, verify >50% own-source dinners and safety guardrails hold |
+| M3 gate approval | Owner approves M3 to proceed to M4 (agent orchestration) |
+| ADR-015 YouTube | Decide whether to enable YouTube reader (Google Cloud project + API key + 30-day refresh loop required) |
 
 ## Follow-ups (not blocking)
 - db/crypto.ts (WP-0.2 minimal helper) and lib/crypto/encryption.ts (canonical) still coexist; consolidate in the first M3 WP touching crypto.
