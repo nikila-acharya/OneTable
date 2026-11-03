@@ -110,4 +110,3 @@ function hasUnconfirmedUncertainIngredient(
 /**
  * Export types for planner use
  */
-export type { Candidate, HardFilterContext };

@@ -12,7 +12,7 @@
  * Every candidate passes the rule engine before it can be placed.
  */
 
-import { filterCandidates, type HardFilterContext } from './filters';
+import { filterCandidates, type HardFilterContext, type Candidate } from './filters';
 import { calculateTargets, type DRITarget, type TargetInput } from '../conditions/targets';
 import { checkAgainstRules, type Rule } from '../rules/engine';
 
@@ -118,7 +118,7 @@ export function buildWeekPlan(
         };
 
         const candidates = filterCandidates(
-          recipes.filter((r) => r.meal_types.includes(mealType)),
+          (recipes.filter((r) => r.meal_types.includes(mealType)) as any),
           context
         );
 
@@ -161,11 +161,11 @@ export function buildWeekPlan(
  * Score a recipe for a member in this context.
  * Factors: own-source preference, variety, nutrients, soft preferences.
  */
-function scoreRecipe(recipe: Recipe, member: Member, prefs: SoftPreferences): number {
+function scoreRecipe(recipe: Candidate, member: Member, prefs: SoftPreferences): number {
   let score = 0;
 
   // Own-source preference (PRD AC: >50% of dinners)
-  if (recipe.own_source) score += 100;
+  if ((recipe as any).own_source) score += 100;
 
   // Agent soft preferences
   if (prefs.agent_prefs) {
@@ -177,7 +177,7 @@ function scoreRecipe(recipe: Recipe, member: Member, prefs: SoftPreferences): nu
   // Diet pattern match
   if (
     member.diet_pattern &&
-    recipe.diet_patterns?.includes(member.diet_pattern)
+    (recipe as any).diet_patterns?.includes(member.diet_pattern)
   ) {
     score += 10;
   }
