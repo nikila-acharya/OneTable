@@ -1,6 +1,14 @@
 # OneTable - Build Status
 
-Last updated: 2026-11-03 15:45 UTC - M3 COMPLETE & GATED; M4 kickoff (ADR-016: OpenRouter + Claude 3.5 Sonnet); WP-4.1 starting (runtime layer)
+**2026-11-03 16:14 UTC - M3 COMPLETE & GATED; M4 CRITICAL PATH ADVANCING**
+
+- ✅ M3 exit: 52/52 tests, demo verified (100% own-source dinners, 0 allergen violations)
+- ✅ ADR-016: OpenRouter + Claude 3.5 Sonnet approved
+- ✅ WP-4.1: Runtime skeleton (11 tests) — OpenRouterClient, tool registry, AgentExecutionContext
+- ✅ WP-4.2: Safety Guardian (29 tests) — SG04 eating-disorder detection (7 vocabulary categories, 75%+ recall, ≤5% FP)
+- ⏳ **CRITICAL PATH**: WP-4.3 (Coordinator agent) starting now
+- **M4 tests so far**: 40/40 passing (11 WP-4.1 + 29 WP-4.2)
+
 
 ## Verified state (CI green on each merge)
 - M0 complete: WP-0.1 scaffold, WP-0.2 Drizzle schema (33 tables, Neon `onetable_dev`), WP-0.3 CI + rule-source/banned-copy gates, WP-0.4 Auth.js v5 + AES-256-GCM, WP-0.5 tool registry R/A/P/X, WP-0.6 tokens/components/gallery
