@@ -286,7 +286,7 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
 
     // step 5 (WP-2.7): Meals Continue lands on Sources, then Review
     fireEvent.click(screen.getByRole("button", { name: "Continue ›" }));
-    expect(await screen.findByText("Where your food comes from")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Where your food comes from" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Skip for now: use our starter recipes ›" })).toBeTruthy(); // §16.5: skip always available
     fireEvent.click(screen.getByRole("button", { name: "Skip for now: use our starter recipes ›" }));
     await screen.findByRole("heading", { name: /Review/ });
@@ -384,7 +384,7 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 
     render(<OnboardingApp />);
-    expect(await screen.findByText("Where your food comes from")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Where your food comes from" })).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Your links"), { target: { value: "https://www.instagram.com/chef.nina" } });
     fireEvent.click(screen.getByRole("button", { name: "Add links" }));
