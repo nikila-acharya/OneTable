@@ -1,6 +1,6 @@
 # OneTable - Build Status
 
-Last updated: 2026-11-03 15:30 UTC - `main` = dd9ba5d (WP-2.7 merged, PR #43); M3 on branch `build/wp-3.1-rules` (PR #44, ready for owner review)
+Last updated: 2026-11-03 15:45 UTC - M3 COMPLETE & GATED; M4 kickoff (ADR-016: OpenRouter + Claude 3.5 Sonnet); WP-4.1 starting (runtime layer)
 
 ## Verified state (CI green on each merge)
 - M0 complete: WP-0.1 scaffold, WP-0.2 Drizzle schema (33 tables, Neon `onetable_dev`), WP-0.3 CI + rule-source/banned-copy gates, WP-0.4 Auth.js v5 + AES-256-GCM, WP-0.5 tool registry R/A/P/X, WP-0.6 tokens/components/gallery
