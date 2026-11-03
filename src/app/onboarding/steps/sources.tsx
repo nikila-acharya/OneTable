@@ -158,6 +158,7 @@ export function Sources({
 
   return (
     <section aria-label="Where your food comes from">
+      <h1>Where your food comes from</h1>
       <p className="ot-sub">
         Paste the blogs and creators you cook from — many links at once, separated by spaces or
         new lines. We tell you what we can do with each one.
