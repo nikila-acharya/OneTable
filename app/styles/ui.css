@@ -1,0 +1,380 @@
+/* OneTable base components — WP-0.6 (PRD §16.2–§16.6).
+ * Visual reference: design/prototype.html (layout, spacing, copy patterns).
+ * Every rule reads app/styles/tokens.css — no hard-coded values.
+ * Components: Button, Field, SegmentedControl, Chip, Card, BottomSheet,
+ * StatusChip, MealBar, TabBar (§16.8 delivery list). */
+
+/* ---------- Button (§16.2 template .btn) ---------- */
+.ot-btn {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-min);
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: 13px 16px;
+  font: var(--fw-medium) var(--text-section)/var(--leading) var(--font-ui);
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--on-primary);
+  text-align: center;
+  transition: background 0.15s;
+}
+.ot-btn:hover,
+.ot-btn:active { background: var(--primary-strong); }
+.ot-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ot-btn--ghost {
+  background: transparent;
+  color: var(--primary-strong);
+  border: 1.5px solid var(--primary);
+}
+.ot-btn--ghost:hover,
+.ot-btn--ghost:active { background: var(--sky); }
+.ot-btn--inline { display: inline-block; width: auto; }
+.ot-btn--small {
+  padding: 8px 14px;
+  font-size: var(--text-body-sm);
+  min-height: 0;
+}
+
+/* Text link-styled button (prototype .link) */
+.ot-link {
+  color: var(--primary-strong);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Field (§16.2 template .field/.input: underlined rounded inputs) ---------- */
+.ot-field { margin: 10px 0; }
+.ot-field__label {
+  display: block;
+  font-size: var(--text-meta-sm);
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+.ot-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--radius-control);
+  padding: 11px 12px;
+  min-height: var(--touch-min);
+  font: var(--fw-regular) var(--text-body-sm)/var(--leading) var(--font-ui);
+}
+textarea.ot-input { min-height: 92px; resize: vertical; }
+.ot-input:focus { outline: var(--focus-ring); outline-offset: 1px; border-color: var(--primary); }
+.ot-field__hint { font-size: var(--text-meta); color: var(--ink-soft); margin: 4px 0 0; }
+.ot-row { display: flex; gap: 10px; }
+.ot-row > * { flex: 1; }
+
+/* ---------- Segmented control (template .seg) ---------- */
+.ot-seg {
+  display: flex;
+  background: var(--stone);
+  border-radius: var(--radius-control);
+  padding: 3px;
+  gap: 3px;
+}
+.ot-seg__option {
+  flex: 1;
+  border: 0;
+  background: none;
+  border-radius: 8px;
+  padding: 8px 4px;
+  min-height: 36px;
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.ot-seg__option[aria-checked="true"] {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: var(--fw-medium);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Chip (template .chip; §16.5 allergy chips) ---------- */
+.ot-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ot-chip {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--radius-chip);
+  padding: 7px 12px;
+  min-height: 34px;
+  font: var(--fw-regular) var(--text-body-sm)/1.2 var(--font-ui);
+  cursor: pointer;
+}
+.ot-chip[aria-pressed="true"] {
+  background: var(--sky);
+  border-color: var(--primary);
+}
+/* Locked / "Never planned" allergy chip (§16.5): always sand, 🔒 + text. */
+.ot-chip--locked {
+  background: var(--sand);
+  border-color: var(--sand-line);
+  cursor: default;
+}
+.ot-chip--locked::before { content: "\1F510 "; font-size: var(--text-meta-sm); }
+
+/* Static small tag (template .tag; used inside cards) */
+.ot-tag {
+  display: inline-block;
+  font-size: var(--text-meta-sm);
+  border-radius: var(--radius-chip);
+  padding: 3px 9px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.ot-tag--allergy { background: var(--sand); }
+.ot-tag--clinician {
+  background: var(--bg);
+  border: 1px dashed var(--warn);
+  color: var(--clin-ink);
+}
+
+/* ---------- Card (template .sum/.member panels, .src/.approve outlines, .addcard) ---------- */
+.ot-card {
+  border-radius: var(--radius-card);
+  padding: 14px;
+  margin: 10px 0;
+  background: var(--stone);
+}
+.ot-card--outline { background: var(--bg); border: 1px solid var(--line); }
+.ot-card--accent { background: var(--bg); border: 1px solid var(--primary); }
+.ot-card--dashed {
+  background: var(--bg);
+  border: 1.5px dashed var(--primary);
+  color: var(--primary-strong);
+  text-align: center;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  width: 100%;
+}
+.ot-card__head {
+  margin: 0 0 6px;
+  font: var(--fw-medium) var(--text-body-sm)/var(--leading) var(--font-ui);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.ot-card__body { font-size: var(--text-body-sm); color: var(--ink); }
+.ot-card__body--muted { color: var(--ink-soft); font-size: var(--text-meta); }
+
+/* ---------- Bottom sheet (§16.2: pickers with Cancel and OK; §16.6 focus trap) ---------- */
+.ot-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.ot-sheet-scrim--open { opacity: 1; }
+.ot-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 430px; /* mobile-first 360–430 (§16.6) */
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  max-height: 88vh;
+  overflow: auto;
+  padding: 16px 20px 24px;
+  transform: translateY(100%);
+  transition: transform 0.25s;
+  z-index: 51;
+  visibility: hidden;
+}
+.ot-sheet--open { transform: none; visibility: visible; }
+.ot-sheet__grab {
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+  margin: 0 auto 12px;
+}
+.ot-sheet__title {
+  font: var(--fw-medium) 20px/var(--leading) var(--font-ui);
+  margin: 0 0 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.ot-sheet__close {
+  background: none;
+  border: 0;
+  font-size: var(--text-body);
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 8px;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+}
+.ot-sheet__body { font-size: var(--text-body-sm); }
+.ot-sheet__footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ot-sheet__footer .ot-btn { flex: 1; }
+
+/* Sky consent panel + warn note, per template .consent/.note (used in sheets) */
+.ot-consent {
+  background: var(--sky);
+  border-radius: var(--radius-control);
+  padding: 12px;
+  margin: 10px 0;
+  font-size: var(--text-body-sm);
+}
+.ot-note {
+  border-left: 3px solid var(--warn);
+  background: var(--warn-soft);
+  padding: 10px 12px;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  font-size: var(--text-body-sm);
+  margin: 10px 0;
+}
+
+/* ---------- Status chip (§16.5 live source states; text always present, 16.6) ---------- */
+.ot-status {
+  display: inline-block;
+  font-size: var(--text-meta-sm);
+  border-radius: var(--radius-chip);
+  padding: 3px 9px;
+}
+.ot-status--running { background: var(--sky); color: var(--ink); }
+.ot-status--ok { background: var(--ok-soft); color: var(--ok-soft-ink); }
+.ot-status--needs-action { background: var(--sand); color: var(--warn-soft-ink); }
+
+/* ---------- Meal bar (§16.2: bars per slot, colored by slot) ---------- */
+.ot-meal {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  margin: 8px 0;
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+/* Slot colors: breakfast/lunch sky (16.3), snack stone, dinner sand. */
+.ot-meal--breakfast, .ot-meal--lunch { background: var(--sky); }
+.ot-meal--snack { background: var(--stone); }
+.ot-meal--dinner { background: var(--sand); }
+.ot-meal--off { background: var(--stone); color: var(--ink-soft); }
+/* Color is never the only signal (§16.6): the slot label is always rendered. */
+.ot-meal__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-meta-sm);
+  color: var(--ink-soft);
+}
+/* The whole title area is one button; "✓ Passed safety checks" is a
+ * sibling button so nothing is nested-interactive (axe). */
+.ot-meal__main {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.ot-meal__title {
+  display: block;
+  font: var(--fw-medium) var(--text-body)/var(--leading) var(--font-ui);
+  margin: 2px 0;
+}
+.ot-meal__who {
+  display: block;
+  font-size: var(--text-meta);
+  color: var(--ink-soft);
+}
+.ot-meal__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+/* "✓ Passed safety checks" — ok color + checkmark + text (16.4/16.6). */
+.ot-meal__safe {
+  font-size: var(--text-meta-sm);
+  color: var(--ok-soft-ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.ot-meal__open { font-size: var(--text-meta-sm); color: var(--primary-strong); }
+.ot-meal__badge {
+  font-size: 11px;
+  background: var(--bg);
+  border-radius: var(--radius-chip);
+  padding: 2px 8px;
+}
+
+/* ---------- Tab bar (§16.2: Plan · Recipes · Groceries · Household) ---------- */
+.ot-tabbar {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  padding: 10px 0 max(18px, env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-meta-sm);
+  color: var(--ink-soft);
+}
+.ot-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  min-height: var(--touch-min);
+  padding: 4px 0;
+}
+.ot-tab__icon { width: 24px; height: 24px; }
+.ot-tab__icon svg { display: block; width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.ot-tab[aria-current="page"] { color: var(--primary-strong); }
+
+/* ---------- Focus + motion (§16.6) ---------- */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ot-btn, .ot-sheet, .ot-sheet-scrim, .progress i { transition: none !important; }
+}
