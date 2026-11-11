@@ -28,6 +28,13 @@ export interface GuardianDecisionRecord {
 export const RESTRICTION_SIGNALS = [
   // Direct restriction requests
   "eat less",
+  // The inflected forms were missed, so a pool tip reading "try eating less to
+  // feel better" was published as safe advice.
+  "eat(?:ing)? less",
+  "eat(?:ing)? fewer",
+  "less food",
+  "smaller portion",
+  "skip meals?",
   "lose weight",
   "burn off",
   "reduce calories",
@@ -68,6 +75,9 @@ export const BANNED_COPY = [
   "treat yourself",
   "earn your meal",
   "work it off",
+  "burn off",
+  "burn it off",
+  "earned it",
 
   // Disease management (stay on FDA general wellness)
   "manage your diabetes",
@@ -101,34 +111,50 @@ export class DeterministicSafetyChecker {
     householdMembers: Array<{ memberId: string; name: string; birthYear: number }>,
   ): { found: boolean; signal?: string; affectedMemberId?: string } {
     const lowercaseMsg = message.toLowerCase();
+    const minors = householdMembers.filter(
+      (m) => new Date().getFullYear() - m.birthYear < 18,
+    );
+    const namedMinor = minors.find((m) => lowercaseMsg.includes(m.name.toLowerCase()));
 
     for (const signal of RESTRICTION_SIGNALS) {
       const regex = new RegExp(signal, "i");
-      if (regex.test(lowercaseMsg)) {
-        // Check if it mentions a member under 18
-        const underAge = householdMembers.filter((m) => {
-          const age = new Date().getFullYear() - m.birthYear;
-          return age < 18;
-        });
+      if (!regex.test(lowercaseMsg)) continue;
 
-        // Check if message refers to that member
-        for (const member of underAge) {
-          if (
-            lowercaseMsg.includes(member.name.toLowerCase()) ||
-            (signal.includes("child") || signal.includes("daughter") || signal.includes("son"))
-          ) {
-            return {
-              found: true,
-              signal,
-              affectedMemberId: member.memberId,
-            };
-          }
-        }
+      // The signal itself is the finding; attributing it to a minor is extra
+      // context, never a precondition. Gating on the child's name meant a
+      // parent writing "he" instead of "Leo" got restriction language past the
+      // guard, and any signal outside two hardcoded strings was ignored.
+      const childReferent = /child|kid|daughter|son|teen|minor/.test(signal)
+        ? (namedMinor?.memberId ?? minors[0]?.memberId)
+        : namedMinor?.memberId;
 
-        // Check for general restriction language
-        if (signal.includes("lose weight") || signal.includes("eat less")) {
-          return { found: true, signal };
-        }
+      return {
+        found: true,
+        signal,
+        ...(childReferent ? { affectedMemberId: childReferent } : {}),
+      };
+    }
+
+    // A stated daily calorie ceiling is a restriction request even when it uses
+    // none of the vocabulary above: "make Leo eat only 1,200 calories a day".
+    const calorieCaps: Array<{ label: string; test: RegExp }> = [
+      { label: "calorie cap", test: /\bonly\s+[\d,.]+\s*(?:kcal|calories?)\b/i },
+      {
+        label: "calorie cap",
+        test: /\beat(?:ing)?\s+(?:only\s+)?[\d,.]+\s*(?:kcal|calories?)\b/i,
+      },
+      {
+        label: "calorie cap",
+        test: /[\d,.]+\s*(?:kcal|calories?)(?:\s+(?:a|per)\s+day|\s+daily)\b/i,
+      },
+    ];
+    for (const cap of calorieCaps) {
+      if (cap.test.test(lowercaseMsg)) {
+        return {
+          found: true,
+          signal: cap.label,
+          ...(namedMinor ? { affectedMemberId: namedMinor.memberId } : {}),
+        };
       }
     }
 
@@ -168,12 +194,14 @@ export class DeterministicSafetyChecker {
     });
 
     const sentences = message.split(/[.!?]/);
+    // Compared lowercased, like the sentence: "BMI" as written never matched a
+    // lowercased sentence, so BMI talk next to a child's name slipped through.
     const weightLanguageTerms = [
       "weight",
       "calories",
       "calorie",
       "deficit",
-      "BMI",
+      "bmi",
       "body mass",
       "skinny",
       "fat",
@@ -190,7 +218,7 @@ export class DeterministicSafetyChecker {
 
       // Check if sentence has weight language
       const hasWeightLanguage = weightLanguageTerms.some((term) =>
-        lowercaseSentence.includes(term),
+        lowercaseSentence.includes(term.toLowerCase()),
       );
 
       if (hasWeightLanguage) {
@@ -221,6 +249,29 @@ export class DeterministicSafetyChecker {
       /if\s+you\s+have.+you\s+should/i,
       /people\s+with.+need\s+to/i,
       /recommended\s+intake.*(?:daily|per week)/i,
+      // Condition + directive in the same sentence is condition-specific advice.
+      // Order-independent: "what should my diabetic husband's carb target be"
+      // puts the directive before the condition, which an ordered pattern missed.
+      // This is the general-wellness boundary (PRD §6/§7): the app must not tell
+      // a household how to manage a diagnosed condition.
+      /\b(?:people|those|anyone)\s+with\b[^.!?]*\b(?:should|shouldn'?t|must|need to|have to|avoid|cut out|eliminate|stop)\b/i,
+      /\b(?:if|when)\s+(?:you|someone|a person)\s+have\b[^.!?]*\b(?:should|must|avoid|need to)\b/i,
+    ];
+
+    // Sentence-scoped pair: a diagnosed condition alongside a directive.
+    const CONDITION_WORD =
+      /\b\w*(?:diabet|kidney|renal|hypertens|cholesterol|celiac|gluten|intoleran|gestational|preeclamp|heart disease|heart failure)\w*\b/i;
+    const DIRECTIVE_WORD =
+      /\b(?:should|shouldn'?t|must|have to|need(?:s|ed)? to|target|targets|limit|limited|avoid|cut(?:ting)? out|eliminate|reduce|restricted|allowed|safe amount)\b/i;
+
+    // Unsubstantiated benefit claims are health advice even with no condition
+    // named: "reduced sodium intake for better health".
+    const healthClaimPatterns = [
+      /\bfor better health\b/i,
+      /\b(?:lowers?|reduces?|decreases?)\s+(?:the\s+)?(?:risk|blood pressure|cholesterol|sodium)\b/i,
+      /\bboost(?:s|ing)?\s+(?:immunity|the immune system|metabolism)\b/i,
+      /\b(?:prevents?|treats?|cures?|heals?)\s+(?:cancer|diabetes|disease|illness)\b/i,
+      /\bdetox(?:ify|ication)?\b/i,
     ];
 
     const sourcePatterns = [
@@ -234,6 +285,31 @@ export class DeterministicSafetyChecker {
       /source:/i,
       /\\[.*\\]/,
     ];
+
+    // Sentence-scoped condition+directive check, run first: it catches the
+    // word orders the fixed patterns above cannot express.
+    for (const sentence of message.split(/[.!?]/)) {
+      if (
+        CONDITION_WORD.test(sentence) &&
+        DIRECTIVE_WORD.test(sentence) &&
+        !sourcePatterns.some((sp) => sp.test(sentence))
+      ) {
+        return { found: true, adviceText: sentence.trim() };
+      }
+    }
+
+    for (const pattern of healthClaimPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        const context = message.substring(
+          Math.max(0, (match.index ?? 0) - 50),
+          (match.index ?? 0) + 100,
+        );
+        if (!sourcePatterns.some((sp) => sp.test(context))) {
+          return { found: true, adviceText: match[0] };
+        }
+      }
+    }
 
     for (const pattern of healthAdvicePatterns) {
       const match = message.match(pattern);

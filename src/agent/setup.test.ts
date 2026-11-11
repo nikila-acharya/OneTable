@@ -6,13 +6,35 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { SetupAgent, type MemberProfile } from "./setup";
-import { createAgentContext } from "../lib/runtime";
+import type { AgentExecutionContext } from "./runtime";
+
+const makeContext = (householdId: string, memberId: string): AgentExecutionContext => ({
+  runId: `run-${householdId}`,
+  mode: "conversational",
+  trigger: "user_message",
+  householdId,
+  userId: memberId,
+  timestamp: new Date().toISOString(),
+  budget: {
+    maxToolCalls: 25,
+    maxDelegations: 4,
+    maxPlannerCalls: 3,
+    maxTokensPerRun: 200_000,
+    toolCallsUsed: 0,
+    delegationsUsed: 0,
+    plannerCallsThisTurn: 0,
+    tokensUsed: 0,
+  },
+  memory: {},
+  household: {},
+  delegationDepth: 0,
+});
 
 describe("SetupAgent", () => {
   let agent: SetupAgent;
 
   beforeEach(() => {
-    const context = createAgentContext("household-1", "onboarding", "member-1");
+    const context = makeContext("household-1", "member-1");
     agent = new SetupAgent(context);
   });
 
@@ -47,7 +69,7 @@ describe("SetupAgent", () => {
       const result = await agent.processInput("vegetarian");
       expect(result.complete).toBe(false);
       expect(agent.getConversationState().stage).toBe("constraints");
-      expect(result.prompt).toContain("time") || result.prompt.toContain("skill");
+      expect(result.prompt.toLowerCase()).toMatch(/time|skill/);
     });
 
     it("completes after constraints with complete=true", async () => {
@@ -228,7 +250,7 @@ describe("SetupAgent", () => {
 
   describe("CKD Condition Gate (SG01)", () => {
     it("detects chronic kidney disease and sets general_guidance mode", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -242,7 +264,7 @@ describe("SetupAgent", () => {
     });
 
     it("detects type 1 diabetes and sets general_guidance mode", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -254,7 +276,7 @@ describe("SetupAgent", () => {
     });
 
     it("detects type 2 diabetes and sets general_guidance mode", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -265,7 +287,7 @@ describe("SetupAgent", () => {
     });
 
     it("detects pregnancy and sets general_guidance mode", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -276,7 +298,7 @@ describe("SetupAgent", () => {
     });
 
     it("detects heart failure and sets general_guidance mode", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -286,19 +308,35 @@ describe("SetupAgent", () => {
       expect(context.memory.gate_mode).toBe("general_guidance");
     });
 
-    it("does not set general_guidance for non-critical conditions", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+    // This case was written against "celiac is not critical", but the shipped
+    // gate says otherwise: src/lib/conditions/policy.ts marks celiac
+    // generalGuidance + glutenHardFilter, and the merged tests/conditions/gate.test.ts
+    // (PRD SG01 bullet 3) lists celiac in `triggers`. The non-gating condition in
+    // PR03 is "other" — recognised, deliberately never acted on.
+    it("does not set general_guidance for the non-gating 'other' condition", async () => {
+      const context = makeContext("household-1", "member-1");
+      const testAgent = new SetupAgent(context);
+
+      await testAgent.startConversation();
+      await testAgent.processInput("none");
+      await testAgent.processInput("other");
+
+      expect(context.memory.gate_mode).toBeUndefined();
+    });
+
+    it("gates celiac into general_guidance (SG01 bullet 3, per the canonical policy)", async () => {
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
       await testAgent.processInput("none");
       await testAgent.processInput("celiac disease");
 
-      expect(context.memory.gate_mode).toBeUndefined();
+      expect(context.memory.gate_mode).toBe("general_guidance");
     });
 
     it("detects multiple critical conditions", async () => {
-      const context = createAgentContext("household-1", "onboarding", "member-1");
+      const context = makeContext("household-1", "member-1");
       const testAgent = new SetupAgent(context);
 
       await testAgent.startConversation();
@@ -306,7 +344,7 @@ describe("SetupAgent", () => {
       await testAgent.processInput("type 2 diabetes, heart failure");
 
       expect(context.memory.gate_mode).toBe("general_guidance");
-      expect(context.memory.triggered_conditions?.length).toBeGreaterThanOrEqual(2);
+      expect((context.memory.triggered_conditions as readonly unknown[]).length).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -408,7 +446,7 @@ describe("SetupAgent", () => {
       await agent.processInput("none");
       const result = await agent.processInput("30 minutes, beginner");
 
-      expect(result.prompt).toContain("general guidance") || expect(result.prompt).toContain("⚠");
+      expect(result.prompt).toMatch(/general guidance|⚠/);
     });
   });
 

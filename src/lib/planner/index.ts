@@ -175,7 +175,7 @@ export function createPlan(options: PlanOptions): MealPlan {
   const lunchOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 250 && r.caloriesPerServing < 450);
 
   // Dinner options (own-source required for some slots if option set)
-  let dinnerOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 300);
+  const dinnerOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 300);
   const ownSourceDinners = dinnerOptions.filter((r) => r.isOwnSource);
 
   // Generate meals for each day

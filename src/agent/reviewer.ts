@@ -122,6 +122,13 @@ const ED_CLAIM_PATTERNS = [
   /\b((excessive|compulsive) ?(exercise|working out?))/i,
   /\b(orthorex|ortho-rex)/i,
   /\b(only ?(organic|clean|pure|natural) food)/i,
+  // Rigid purity rules ("I only eat organic clean pure natural food",
+  // "I can only eat perfect clean food") never matched: the pattern above needs
+  // the adjective directly against "food", so these claims passed unfiltered.
+  /\bonly\s+(?:eat|eating|have|drink)\b[^.!?]*\b(clean|pure|organic|natural|perfect|wholesome)\b/i,
+  /\b(can\s+only\s+eat)\b/i,
+  /\b(clean|pure|perfect|real)\s+food/i,
+  /\b(food\s+purity|pure\s+eating|toxic\s+food)\b/i,
   /\b(this (will |food )makes you (fat|obese|gain weight))/i,
   // Weight-focused language
   /\b(I'm (too )?fat|I'm ?(so )?obese)/i,
@@ -219,16 +226,31 @@ export class ReviewerAgent {
     if (!conversationHistory) return { liked, disliked, cuisinePrefs };
 
     for (const msg of conversationHistory) {
+      if (msg.role !== 'user') continue;
       const content = msg.content.toLowerCase();
 
-      // Simple heuristics for recipe mentions
-      const recipeMatch = content.match(/recipe[:\s]+([a-z0-9_-]+)/i);
-      if (recipeMatch) {
-        const recipeId = recipeMatch[1];
-        if (content.includes('love') || content.includes('great') || content.includes('favorite')) {
-          liked.push({ recipeId, reason: content.slice(0, 100) });
-        } else if (content.includes('hate') || content.includes('dislike') || content.includes('awful')) {
-          disliked.push({ recipeId, reason: content.slice(0, 100) });
+      // Recipe ids arrive as `recipe_pasta_carbonara`. The old pattern required a
+      // colon or space after "recipe", so the canonical underscore form never
+      // matched and every rating came back empty. The separator is required, so
+      // the plural word "recipes" cannot be captured as an id.
+      const MENTION = /recipe(?:[_-]|[:\s])([a-z][a-z0-9]*(?:[_-][a-z0-9]+)*)/gi;
+      const LIKE = /\b(loved|loves|love|great|amazing|favorite|favourite|excellent|wonderful|delicious|liked|likes)\b/;
+      const DISLIKE = /\b(hated|hate|awful|terrible|disliked|dislike|disgusting|gross|nasty|never)\b/;
+
+      // Sentiment is read per clause, the same way cuisine preference is, so a
+      // praise word about one dish cannot attach to a different dish in the
+      // same message.
+      for (const clause of content.split(/[,.;!?]+/)) {
+        const avoid = DISLIKE.test(clause);
+        const prefer = !avoid && LIKE.test(clause);
+        if (!avoid && !prefer) continue;
+
+        for (const m of clause.matchAll(MENTION)) {
+          const recipeId = m[1];
+          if (!recipeId) continue;
+          const entry = { recipeId, reason: clause.trim().slice(0, 100) };
+          if (avoid) disliked.push(entry);
+          else liked.push(entry);
         }
       }
 
@@ -277,25 +299,36 @@ export class ReviewerAgent {
 
     if (!conversationHistory) return { preferred: [], avoided: [], neutral: [] };
 
+    // Sentiment is read per clause, not per phrase template. The previous version
+    // matched hardcoded strings like `no ${cuisine}`, so "No more Thai for me" and
+    // "Please avoid Thai food" both fell through to neutral and the household's
+    // stated aversion was never learned.
+    const POSITIVE =
+      /\b(love|loves|liked|likes|enjoy\w*|prefer\w*|favorite|favourite|great|amazing|delicious|awesome|more)\b/;
+    const NEGATIVE =
+      /\b(no|never|stop|dislike\w*|hate|avoid\w*|skip\w*|can't|cannot|not a fan|too spicy|get rid)\b/;
+
     for (const msg of conversationHistory) {
-      const content = msg.content.toLowerCase();
+      // Only the household's own words are evidence of taste: learning a
+      // preference from the assistant echoing "Italian is on the menu" would
+      // reinforce whatever the agent itself served.
+      if (msg.role !== 'user') continue;
+
+      const clauses = msg.content.toLowerCase().split(/[,.;!?]+/);
       for (const cuisine of cuisineList) {
-        if (content.includes(cuisine)) {
-          if (
-            content.includes(`${cuisine}... don't`) ||
-            content.includes(`no ${cuisine}`) ||
-            content.includes(`hate ${cuisine}`)
-          ) {
-            cuisines[cuisine] = 'avoided';
-          } else if (
-            content.includes(`love ${cuisine}`) ||
-            content.includes(`make ${cuisine}`) ||
-            content.includes(`${cuisine}... yes`)
-          ) {
-            cuisines[cuisine] = 'preferred';
-          } else {
-            cuisines[cuisine] = cuisines[cuisine] || 'neutral';
-          }
+        for (const clause of clauses) {
+          if (!clause.includes(cuisine)) continue;
+
+          const avoided = NEGATIVE.test(clause);
+          const preferred = !avoided && POSITIVE.test(clause);
+          const next = avoided ? 'avoided' : preferred ? 'preferred' : 'neutral';
+
+          // A stated aversion outranks an earlier positive reading of the same
+          // cuisine, and a direct statement outranks a bare mention.
+          const current = cuisines[cuisine];
+          if (current === 'avoided') continue;
+          if (current === 'preferred' && next === 'neutral') continue;
+          cuisines[cuisine] = next;
         }
       }
     }
@@ -395,17 +428,26 @@ export class ReviewerAgent {
       for (const pattern of ED_CLAIM_PATTERNS) {
         if (pattern.test(claim)) {
           // Determine category
+          // Word boundaries matter: unbounded /fat|thin/ matched inside ordinary
+          // words ("after", "thinnest") and mislabelled a purity claim as
+          // weight_focus. Purity is also tested before weight language so a
+          // "clean food" claim is not stolen by a stray body-shape word.
           let category: HealthClaimFilter['category'] = 'other';
-          if (claim.match(/carbs?|sugar.*toxic|poison/i)) {
+          if (/\b(carbs?|sugar)\b[^.!?]*\b(toxic|poison|bad|evil)\b/i.test(claim)) {
             category = 'misinformation';
-          } else if (claim.match(/detox|cleanse/i)) {
+          } else if (/\b(detox\w*|cleanse\w*|purif\w*)\b/i.test(claim)) {
             category = 'detox_myth';
-          } else if (claim.match(/restrict|eliminate|cut out/i)) {
-            category = 'restriction';
-          } else if (claim.match(/weight|fat|thin|obese/i)) {
-            category = 'weight_focus';
-          } else if (claim.match(/only.*food|clean.*food|pure.*food/i)) {
+          } else if (
+            /\bonly\s+(eat|eating|have|had)\b/i.test(claim) ||
+            /\bonly\s+(clean|pure|organic|natural|perfect)\b/i.test(claim) ||
+            /\b(clean|pure|perfect)\s+food\b/i.test(claim) ||
+            /\bethorex|\borthorex/i.test(claim)
+          ) {
             category = 'orthorexia';
+          } else if (/\b(restrict|eliminate|cut\s*out|cutting\s+out|no\s+carbs|avoid\s+(carbs|sugar|fat))\b/i.test(claim)) {
+            category = 'restriction';
+          } else if (/\b(weight|fat|thin|thinner|skinny|obese|slim)\b/i.test(claim)) {
+            category = 'weight_focus';
           }
 
           filtered.push({
@@ -471,7 +513,7 @@ export class ReviewerAgent {
       weight_focus:
         'Health encompasses far more than weight. Focus on how you feel, your energy, and sustainable habits rather than numbers on a scale.',
       misinformation:
-        'Carbohydrates are an essential macronutrient. Whole grains, fruits and legumes provide fiber, vitamins and minerals your body needs.',
+        'All food groups provide nutrients. A balanced diet includes carbohydrates, protein, healthy fats, fruits and vegetables, and no macronutrient is toxic.',
       other: 'When in doubt, consult evidence-based nutrition sources or a registered dietitian.',
     };
     return corrections[category];
@@ -595,4 +637,3 @@ export class ReviewerAgent {
   }
 }
 
-export type { TasteProfile, LearnedPattern, HealthClaimFilter, ReviewerAnalysis };

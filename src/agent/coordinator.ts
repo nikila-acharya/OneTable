@@ -47,6 +47,8 @@ export interface CoordinatorResponse {
     summary: string;
     diff: Record<string, unknown>;
     expiresAt: string;
+    /** Which tool(s) the decision authorises, e.g. "propose:planner+grocery". */
+    tool?: string;
   };
   delegationsSummary?: {
     agentsInvolved: string[];
@@ -120,44 +122,62 @@ export class Coordinator {
       // 2. Understand intent
       const intent = await this.classifyIntent(userMessage);
 
-      if (intent.type === "help") {
-        return this.respondToHelp(userMessage);
+      const results: DelegationResult[] = [];
+
+      if (intent.type !== "help") {
+        // 3. Check budget before delegating. A help answer costs no delegation,
+        // so it is not gated here — it still has to reach the output guard below.
+        const budgetStatus = this.runtime.getBudgetStatus(this.context);
+        if (budgetStatus.delegationsRemaining <= 0) {
+          return {
+            success: false,
+            message: "I've used my delegation budget this turn. Let me summarize what we've done so far.",
+            cards: [],
+            budgetStatus,
+            delegationsSummary: {
+              agentsInvolved: [],
+              tasksCompleted: 0,
+              tasksSkipped: 0,
+            },
+            error: "Budget exhausted",
+          };
+        }
+
+        // 4. Delegate to specialists
+        const delegationTasks = this.buildDelegationTasks(intent, userMessage);
+
+        for (const task of delegationTasks) {
+          const budgetCheck = this.runtime.getBudgetStatus(this.context);
+          if (budgetCheck.delegationsRemaining <= 0) {
+            break; // Stop delegating if out of budget
+          }
+
+          const result = await this.delegateToSpecialist(task);
+          if (result) {
+            results.push(result);
+            this.delegationResults.push({ task, result });
+          }
+        }
       }
 
-      // 3. Check budget before delegating
-      const budgetStatus = this.runtime.getBudgetStatus(this.context);
-      if (budgetStatus.delegationsRemaining <= 0) {
-        return {
-          success: false,
-          message: "I've used my delegation budget this turn. Let me summarize what we've done so far.",
-          cards: [],
-          budgetStatus,
-          error: "Budget exhausted",
+      // 5. Merge results into one response. Help answers merge zero delegations
+      // but take the same path: every user-visible message is guarded and shaped
+      // identically, which the early return used to skip.
+      const merged =
+        intent.type === "help"
+          ? this.respondToHelp(userMessage)
+          : this.mergeSpecialistResults(results, intent);
+
+      if (intent.type === "help") {
+        merged.delegationsSummary = {
+          agentsInvolved: [],
+          tasksCompleted: 0,
+          tasksSkipped: 0,
         };
       }
 
-      // 4. Delegate to specialists
-      const delegationTasks = this.buildDelegationTasks(intent, userMessage);
-      const results: DelegationResult[] = [];
-
-      for (const task of delegationTasks) {
-        const budgetCheck = this.runtime.getBudgetStatus(this.context);
-        if (budgetCheck.delegationsRemaining <= 0) {
-          break; // Stop delegating if out of budget
-        }
-
-        const result = await this.delegateToSpecialist(task);
-        if (result) {
-          results.push(result);
-          this.delegationResults.push({ task, result });
-        }
-      }
-
-      // 5. Merge results into one response
-      const merged = this.mergeSpecialistResults(results, intent);
-
       // 6. Create approval card if needed (one per request)
-      if (this.shouldCreateApprovalCard(results)) {
+      if (results.length > 0 && this.shouldCreateApprovalCard(results)) {
         merged.approvalCard = this.createApprovalCard(results);
       }
 
@@ -187,38 +207,89 @@ export class Coordinator {
   /**
    * Classify user intent using LLM.
    */
+  /**
+   * Deterministic request routing (AG01).
+   *
+   * This used to ask an LLM to classify the message and, on ANY failure, silently
+   * return the "help" intent — so without an API key every real request ("plan
+   * meals for next week") answered with a topic list and no delegation. Routing is
+   * now pure pattern matching: reproducible, free, and testable without network.
+   *
+   * One message can raise several intents ("plan meals and import recipes"); all
+   * of them are unioned into one delegation set, because the Coordinator still
+   * merges every specialist proposal into a single approval card.
+   */
+  private static readonly INTENT_RULES: ReadonlyArray<{
+    type: UserIntent["type"];
+    specialists: UserIntent["specialists"];
+    priority: UserIntent["priority"];
+    test: RegExp;
+  }> = [
+    {
+      type: "setup_household",
+      specialists: ["setup"],
+      priority: "high",
+      test: /\b(allerg\w*|member|members|kid|kids|child|children|son|daughter|household|onboard\w*|set\s*up|gluten|vegan|vegetarian|diabet\w*|kidney|hypertension|cholesterol|celiac|pregnan\w*)\b/i,
+    },
+    {
+      type: "import_recipes",
+      specialists: ["scout"],
+      priority: "normal",
+      test: /\b(import\w*|recipe|recipes|blog|link|url)\b|https?:\/\//i,
+    },
+    {
+      type: "plan_meals",
+      specialists: ["planner", "grocery"],
+      priority: "high",
+      test: /\b(plan|plans|meal|meals|dinner|lunch|breakfast|reflow|swap)\b/i,
+    },
+    {
+      type: "draft_grocery",
+      specialists: ["grocery"],
+      priority: "normal",
+      test: /\b(grocer\w*|shopping|shop)\b/i,
+    },
+    {
+      type: "check_schedule",
+      specialists: ["planner"],
+      priority: "normal",
+      test: /\b(schedule|calendar|tonight|tomorrow)\b|what'?s\s+(on|for)/i,
+    },
+    {
+      type: "ask_tips",
+      specialists: ["activity"],
+      priority: "low",
+      test: /\b(tip|tips|advice|activity|exercise|nutri\w*|goal|goals)\b/i,
+    },
+  ];
+
   private async classifyIntent(message: string): Promise<UserIntent> {
-    const systemPrompt = `You are a request router. Classify the user's message into one of these intents:
-- setup_household: setting up or updating family members, preferences
-- import_recipes: importing recipes from URLs or sources
-- plan_meals: planning meals, swapping, adjusting for guests
-- draft_grocery: preparing grocery list
-- ask_tips: asking for nutrition or activity tips
-- check_schedule: checking meal plan, schedule
-- help: asking for help or general questions
+    const matched = Coordinator.INTENT_RULES.filter((rule) => rule.test.test(message));
 
-Respond with ONLY (one line):
-type: [type]`;
-
-    try {
-      this.llm.resetHistory();
-      const result = await this.llm.callWithTools(systemPrompt, `Classify: "${message}"`, []);
-      const text = result.text.toLowerCase();
-
-      if (text.includes("setup")) return { type: "setup_household", summary: message, specialists: ["setup"], priority: "high" };
-      if (text.includes("import") || text.includes("recipe")) return { type: "import_recipes", summary: message, specialists: ["scout"], priority: "normal" };
-      if (text.includes("plan") || text.includes("meal")) return { type: "plan_meals", summary: message, specialists: ["planner", "grocery"], priority: "high" };
-      if (text.includes("grocery")) return { type: "draft_grocery", summary: message, specialists: ["grocery"], priority: "normal" };
-      if (text.includes("tip") || text.includes("activity")) return { type: "ask_tips", summary: message, specialists: ["activity"], priority: "low" };
-      if (text.includes("schedule") || text.includes("plan")) return { type: "check_schedule", summary: message, specialists: ["planner"], priority: "normal" };
-
-      return { type: "help", summary: message, specialists: [], priority: "low" };
-    } catch (error) {
-      // Default to help on error
+    // Nothing recognisable: answer with help rather than inventing a delegation.
+    if (matched.length === 0) {
       return { type: "help", summary: message, specialists: [], priority: "low" };
     }
-  }
 
+    const rank = { high: 0, normal: 1, low: 2 } as const;
+    const primary = matched.reduce((best, rule) =>
+      rank[rule.priority] < rank[best.priority] ? rule : best,
+    );
+
+    const specialists: UserIntent["specialists"] = [];
+    for (const rule of matched) {
+      for (const agent of rule.specialists) {
+        if (!specialists.includes(agent)) specialists.push(agent);
+      }
+    }
+
+    return {
+      type: primary.type,
+      summary: message,
+      specialists,
+      priority: primary.priority,
+    };
+  }
   /**
    * Build specialist delegation tasks from intent.
    */
@@ -329,11 +400,13 @@ type: [type]`;
       }
     }
 
+    const roles = [...new Set(results.map((r) => r.agentRole))].sort();
     return {
       id: `approval-${Date.now()}`,
       summary: `Plan and grocery list (from ${results.map((r) => r.agentRole).join(", ")})`,
       diff: diffs,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      tool: `propose:${roles.join("+")}`,
     };
   }
 
@@ -356,6 +429,9 @@ type: [type]`;
       success: true,
       message: `Here's what I can help with:\n${response}`,
       cards: [],
+      // Callers read the budget on every turn, help included: the UI dims the
+      // composer from this number, and a missing budgetStatus read as "unlimited".
+      budgetStatus: this.runtime.getBudgetStatus(this.context),
     };
   }
 

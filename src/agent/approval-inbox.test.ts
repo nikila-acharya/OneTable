@@ -509,6 +509,11 @@ describe("WP-4.4 AG05 Manager (Approval Inbox, Action Log, Undo)", () => {
         tokensUsed: 100,
         durationMs: 500,
         reversible: true,
+        // Required for the undo below to actually succeed. Without a previous
+        // state there is nothing to revert, UndoManager refuses (correctly), the
+        // entry is never marked undone, and this test was asserting "already
+        // undone" about an action that had not been undone at all.
+        previousState: { name: "Leo", age: 10 },
       });
 
       undo.undo(entry.id, userId);

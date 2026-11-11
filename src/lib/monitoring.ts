@@ -102,7 +102,7 @@ export class Monitor {
 
     try {
       const response = await fetch(`/api/health/${service}`, {
-        timeout: 5000,
+        signal: AbortSignal.timeout(5000),
       });
 
       const responseTimeMs = Date.now() - startTime;

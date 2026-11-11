@@ -228,9 +228,17 @@ describe("ScoutAgent", () => {
         maxCookTimeMinutes: 12,
       };
       const results = scout.searchRecipes(params);
-      // Only pad thai (10 min) should match
-      expect(results.length).toBe(1);
-      expect(results[0].name).toContain("Pad Thai");
+
+      // This test claimed "only pad thai (10 min) should match" and asserted a
+      // count of 1, but the seeded fixture also includes the Peanut Butter Cookie
+      // at exactly 12 minutes — and `max` is inclusive, which the sibling test
+      // above relies on (`cookTimeMinutes <= 15`). The comment was wrong about
+      // its own data, so the assertion now states the actual contract:
+      // everything returned fits the window and the 20-minute recipe is out.
+      expect(results.every((x) => x.cookTimeMinutes === null || x.cookTimeMinutes <= 12)).toBe(true);
+      expect(results.some((x) => x.name.includes("Pad Thai"))).toBe(true);
+      expect(results.some((x) => x.name.includes("Grilled Chicken"))).toBe(false);
+      expect(results.length).toBe(2);
     });
 
     it("should search with multiple constraints", () => {
@@ -260,7 +268,7 @@ describe("ScoutAgent", () => {
       expect(extracted).toContain("chicken breast");
       expect(extracted).toContain("garlic");
       expect(extracted).toContain("olive oil");
-      expect(extracted[0]).not.toHaveLeadingOrTrailingWhitespace?.();
+      for (const ing of extracted) expect(ing).toBe(ing.trim());
     });
 
     it("should filter empty ingredient strings", () => {

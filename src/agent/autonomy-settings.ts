@@ -79,7 +79,7 @@ export class AutonomySettings {
    *
    * @param persisted Optional map of persisted settings; missing agents use defaults
    */
-  constructor(persisted?: Record<AgentId, AgentAutonomySetting>) {
+  constructor(persisted?: Partial<Record<AgentId, AgentAutonomySetting>>) {
     // Initialize with defaults
     for (const agentId of Object.values(AGENT_IDS)) {
       this.settings.set(agentId, JSON.parse(JSON.stringify(DEFAULTS[agentId])));
@@ -89,9 +89,11 @@ export class AutonomySettings {
     if (persisted) {
       for (const [agentId, setting] of Object.entries(persisted)) {
         if (this.isValidAgentId(agentId as string)) {
-          this.settings.set(agentId as AgentId, {
-            ...setting,
-            agent_id: agentId as AgentId,
+          const id = agentId as AgentId;
+          this.settings.set(id, {
+            ...DEFAULTS[id],
+            ...(setting as AgentAutonomySetting),
+            agent_id: id,
           });
         }
       }
@@ -128,7 +130,7 @@ export class AutonomySettings {
     }
 
     const current = this.get(agentId);
-    let updated: AgentAutonomySetting = {
+    const updated: AgentAutonomySetting = {
       ...current,
       ...settings,
       agent_id: agentId,

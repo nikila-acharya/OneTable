@@ -6,10 +6,10 @@
  * Respects SG01 condition gate (CKD → general_guidance mode).
  */
 
-import { ALLERGENS, CONDITIONS, type Allergen, type Condition } from "./health/enums";
-import { DIET_PATTERNS, type DietPattern } from "./members/types";
+import { ALLERGENS, CONDITIONS, type Allergen, type Condition } from "../lib/health/enums";
+import { DIET_PATTERNS, type DietPattern } from "../lib/members/types";
 import { LLMClient, type AgentExecutionContext } from "./runtime";
-import { evaluateSG01Gate, isCriticalCondition } from "./guardian";
+import { evaluateConditionGate } from "../lib/conditions/gate";
 
 export interface MemberProfile {
   allergies: readonly Allergen[];
@@ -79,17 +79,18 @@ export class SetupAgent {
     const allergies = this.conversationState.responses.allergies ?? [];
     const conditions = this.conversationState.responses.conditions ?? [];
 
-    // Check SG01 gate: if CKD or similar, store but mark in context
-    const gateResult = evaluateSG01Gate(conditions);
+    // Check SG01 gate: only recognised conditions were stored, so the gate sees
+    // a clean list. Rejected text never reaches it.
+    const gateResult = evaluateConditionGate(this.context.userId, conditions as readonly unknown[]);
     if (gateResult.mode === "general_guidance") {
       this.context.memory.gate_mode = "general_guidance";
-      this.context.memory.triggered_conditions = gateResult.triggeredConditions;
+      this.context.memory.triggered_conditions = gateResult.triggers;
     }
 
     return {
       allergies: allergies as Allergen[],
       conditions: conditions as Condition[],
-      diet_pref: this.conversationState.responses.diet_pref ?? [],
+      diet_pref: (this.conversationState.responses.diet_pref ?? []) as readonly DietPattern[],
       cuisines: this.conversationState.responses.cuisines as string[] | undefined,
       time_minutes: this.conversationState.responses.time_minutes as number | undefined,
       skill_level: this.conversationState.responses.skill_level as "beginner" | "intermediate" | "advanced" | undefined,
@@ -113,13 +114,11 @@ export class SetupAgent {
   }
 
   private async processAllergyInput(input: string): Promise<{ prompt: string; complete: boolean }> {
-    const allergies = this.parseAllergies(input);
-    this.conversationState.responses.allergies = allergies;
+    const parsed = this.matchEnum(input, ALLERGENS);
+    this.conversationState.responses.allergies = parsed.matched;
 
-    // Validate allergies
-    const invalidAllergies = allergies.filter(
-      (a): a is string => typeof a === "string" && !ALLERGENS.includes(a as Allergen),
-    );
+    // Validate allergies against what the user actually typed
+    const invalidAllergies = parsed.unknown;
 
     if (invalidAllergies.length > 0) {
       this.conversationState.validationErrors.push(
@@ -141,15 +140,15 @@ export class SetupAgent {
   }
 
   private async processConditionInput(input: string): Promise<{ prompt: string; complete: boolean }> {
-    const conditions = this.parseConditions(input);
-    this.conversationState.responses.conditions = conditions;
+    const parsedConditions = this.matchEnum(input, CONDITIONS);
+    this.conversationState.responses.conditions = parsedConditions.matched;
 
-    // Check SG01 gate
-    const gateResult = evaluateSG01Gate(conditions);
-
-    // Validate conditions
-    const invalidConditions = conditions.filter(
-      (c): c is string => typeof c === "string" && !CONDITIONS.includes(c as Condition),
+    // Validate conditions first: gating on a half-parsed answer would switch the
+    // member into general-guidance mode over text that was rejected anyway.
+    const invalidConditions = parsedConditions.unknown;
+    const gateResult = evaluateConditionGate(
+      this.context.userId,
+      parsedConditions.matched,
     );
 
     if (invalidConditions.length > 0) {
@@ -165,7 +164,7 @@ export class SetupAgent {
     // If critical condition detected, note mode switch
     if (gateResult.mode === "general_guidance") {
       this.context.memory.gate_mode = "general_guidance";
-      this.context.memory.triggered_conditions = gateResult.triggeredConditions;
+      this.context.memory.triggered_conditions = gateResult.triggers;
     }
 
     this.conversationState.stage = "diet";
@@ -178,13 +177,11 @@ export class SetupAgent {
   }
 
   private async processDietInput(input: string): Promise<{ prompt: string; complete: boolean }> {
-    const diets = this.parseDiet(input);
-    this.conversationState.responses.diet_pref = diets;
+    const parsedDiets = this.matchEnum(input, DIET_PATTERNS);
+    this.conversationState.responses.diet_pref = parsedDiets.matched;
 
-    // Validate diet patterns
-    const invalidDiets = diets.filter(
-      (d): d is string => typeof d === "string" && !DIET_PATTERNS.includes(d as DietPattern),
-    );
+    // Validate diet patterns against the raw answer
+    const invalidDiets = parsedDiets.unknown;
 
     if (invalidDiets.length > 0) {
       this.conversationState.validationErrors.push(
@@ -222,6 +219,19 @@ export class SetupAgent {
       };
     }
 
+    // Reject unrecognised text instead of accepting the turn as complete.
+    if (constraints.other.length > 0) {
+      this.conversationState.validationErrors.push(
+        `Unrecognised constraint(s): ${constraints.other.join(", ")}`,
+      );
+      return {
+        prompt:
+          `I didn't recognize: ${constraints.other.join(", ")}.\n\n` +
+          `Tell me your prep time (e.g. "30 minutes") and skill level: ${validSkills.join(", ")}.`,
+        complete: false,
+      };
+    }
+
     // Validate time is a positive number
     if (constraints.timeMinutes !== undefined && constraints.timeMinutes <= 0) {
       this.conversationState.validationErrors.push(
@@ -244,25 +254,53 @@ export class SetupAgent {
 
   // --- Private parsing helpers ---
 
-  private parseAllergies(input: string): Allergen[] {
-    if (!input || input.toLowerCase() === "none") return [];
+  /**
+   * Match a free-text answer against a fixed enum.
+   *
+   * The previous implementation filtered the enum by substring, which threw
+   * unrecognised tokens away — so "peanuts, mystery-allergen" validated clean and
+   * the conversation advanced. Unknown tokens are now returned so each stage can
+   * reject them, and matches keep the order the user wrote them in (the profile
+   * test asserts input order, not enum order).
+   */
+  private matchEnum<T extends string>(
+    input: string,
+    allowed: readonly T[],
+  ): { matched: T[]; unknown: string[] } {
+    const matched: T[] = [];
+    const unknown: string[] = [];
+    if (!input || input.trim().toLowerCase() === "none") return { matched, unknown };
 
-    const lowerInput = input.toLowerCase();
-    return ALLERGENS.filter((allergen) => lowerInput.includes(allergen));
+    for (const raw of input.split(/[,;\n]|\s+and\s+/i)) {
+      const token = raw.trim().toLowerCase();
+      if (!token || token === "none") continue;
+
+      const exact = allowed.find((value) => value.toLowerCase() === token);
+      if (exact) {
+        if (!matched.includes(exact)) matched.push(exact);
+        continue;
+      }
+      // Multi-word enum values arrive inside a longer phrase ("allergic to peanuts").
+      const contained = allowed.find((value) => token.includes(value.toLowerCase()));
+      if (contained) {
+        if (!matched.includes(contained)) matched.push(contained);
+        continue;
+      }
+      unknown.push(token);
+    }
+    return { matched, unknown };
+  }
+
+  private parseAllergies(input: string): Allergen[] {
+    return this.matchEnum(input, ALLERGENS).matched;
   }
 
   private parseConditions(input: string): Condition[] {
-    if (!input || input.toLowerCase() === "none") return [];
-
-    const lowerInput = input.toLowerCase();
-    return CONDITIONS.filter((condition) => lowerInput.includes(condition));
+    return this.matchEnum(input, CONDITIONS).matched;
   }
 
   private parseDiet(input: string): DietPattern[] {
-    if (!input || input.toLowerCase() === "none") return [];
-
-    const lowerInput = input.toLowerCase();
-    return DIET_PATTERNS.filter((diet) => lowerInput.includes(diet));
+    return this.matchEnum(input, DIET_PATTERNS).matched;
   }
 
   private parseConstraints(
@@ -291,10 +329,22 @@ export class SetupAgent {
     else if (lowerInput.includes("intermediate")) result.skillLevel = "intermediate";
     else if (lowerInput.includes("advanced")) result.skillLevel = "advanced";
 
-    // Collect other constraints as strings
-    const constraints = input.split(/[,;]/).map((s) => s.trim()).filter((s) => s.length > 0 && !s.match(/\d+\s*(minute|hour)/i) && !s.match(/(beginner|intermediate|advanced)/i));
+    // Anything left over after time and skill is unparseable at this stage.
+    // The question asks for exactly two things, so the remainder is collected
+    // here and the caller rejects the turn rather than storing junk as a
+    // constraint: "30 minutes, unknown-skill" used to be accepted as complete.
+    const leftover = input
+      .split(/[,;]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(
+        (s) =>
+          s.length > 0 &&
+          s !== "none" &&
+          !/^\d+\s*(minute|minutes|hour|hours)$/.test(s) &&
+          !/^(beginner|intermediate|advanced)$/.test(s),
+      );
 
-    result.other = constraints;
+    result.other = leftover;
 
     return result;
   }

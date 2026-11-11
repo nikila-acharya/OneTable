@@ -5,8 +5,27 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Coordinator } from "./coordinator";
+import type { GuardianCheckResult } from "./safety-guardian";
+import type { GuardianDecisionRecord } from "./safety-rules";
 import { AgentRuntime } from "./runtime";
 import { SafetyGuardian } from "./safety-guardian";
+
+/**
+ * A real GuardianDecisionRecord, not `{} as any`: the coordinator stores this
+ * object on every check, so an empty cast hid the shape the eval suite reads.
+ */
+const decisionRecord = (
+  checkType: GuardianDecisionRecord["checkType"],
+  decision: GuardianDecisionRecord["decision"],
+  failedChecks: string[] = [],
+): GuardianDecisionRecord => ({
+  id: `rec-${checkType}-${decision}`,
+  timestamp: new Date().toISOString(),
+  messageId: `msg-${checkType}`,
+  checkType,
+  decision,
+  failedChecks,
+});
 import type { AgentExecutionContext } from "./runtime";
 
 describe("WP-4.3 Coordinator Agent", () => {
@@ -25,18 +44,21 @@ describe("WP-4.3 Coordinator Agent", () => {
     );
 
     // Mock guardian
+    const passInput: GuardianCheckResult = {
+      decision: "pass",
+      failedChecks: [],
+      record: decisionRecord("input", "pass"),
+    };
+    const passOutput: GuardianCheckResult = {
+      decision: "pass",
+      failedChecks: [],
+      record: decisionRecord("output", "pass"),
+    };
+
     mockGuardian = {
-      checkInputMessage: vi.fn().mockResolvedValue({
-        decision: "pass",
-        failedChecks: [],
-        record: {} as any,
-      }),
-      checkOutputMessage: vi.fn().mockResolvedValue({
-        decision: "pass",
-        failedChecks: [],
-        record: {} as any,
-      }),
-    } as any;
+      checkInputMessage: vi.fn().mockResolvedValue(passInput),
+      checkOutputMessage: vi.fn().mockResolvedValue(passOutput),
+    } as unknown as SafetyGuardian;
 
     coordinator = new Coordinator(mockContext, runtime, mockGuardian);
   });
@@ -193,7 +215,7 @@ describe("WP-4.3 Coordinator Agent", () => {
         decision: "block",
         reason: "Restriction signal detected",
         failedChecks: ["SG04"],
-        record: {} as any,
+        record: decisionRecord("input", "block", ["SG04"]),
       });
 
       const response = await coordinator.handleUserRequest(
@@ -216,7 +238,7 @@ describe("WP-4.3 Coordinator Agent", () => {
         reason: "Banned copy detected",
         replacementMessageId: "safe_fallback",
         failedChecks: ["banned_copy"],
-        record: {} as any,
+        record: decisionRecord("output", "replace", ["banned_copy"]),
       });
 
       const response = await coordinator.handleUserRequest("Plan meals");

@@ -62,7 +62,12 @@ describe("WP-4.1 Multi-agent Runtime", () => {
     it("returns read-only conversation history", () => {
       const history = client.getHistory();
       expect(() => {
-        (history as any)[0] = { role: "user", content: "modified" };
+        // The array itself is frozen; casting through an index signature keeps
+        // the assertion honest without going through `any`.
+        (history as unknown as Record<number, { role: string; content: string }>)[0] = {
+          role: "user",
+          content: "modified",
+        };
       }).toThrow();
     });
   });
@@ -380,10 +385,25 @@ describe("WP-4.1 Multi-agent Runtime", () => {
       );
 
       const specialists = ["setup", "scout", "planner", "grocery", "activity", "reviewer"] as const;
+
+      // One shared context cannot serve this assertion: maxDelegations is 4 per
+      // run (the PRD budget, asserted by the sibling test above), so the 5th and
+      // 6th call were refused for budget reasons and the loop read as "some
+      // specialists are off-limits to the coordinator". What is actually being
+      // tested is capability, so each specialist gets its own run.
+      for (const spec of specialists) {
+        const fresh = runtime.createContext(`run-${spec}`, "conversational", "user_message", "user-123");
+        const result = runtime.recordDelegation(fresh, spec);
+        expect(result, `coordinator should be able to delegate to ${spec}`).toEqual({ allowed: true });
+      }
+
+      // …and the ceiling still holds within a single run.
       specialists.forEach((spec) => {
         const result = runtime.recordDelegation(ctx, spec);
-        expect(result.allowed).toBe(true);
+        if (result.allowed) expect(ctx.budget.delegationsUsed).toBeLessThanOrEqual(ctx.budget.maxDelegations);
+        else expect(result.reason).toBe("Max delegations per run exceeded");
       });
+      expect(ctx.budget.delegationsUsed).toBe(ctx.budget.maxDelegations);
     });
   });
 

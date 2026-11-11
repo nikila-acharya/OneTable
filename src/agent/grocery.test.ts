@@ -184,7 +184,14 @@ describe("WP-4.8 Grocery & Pantry Agent", () => {
 
     it("detects items near spoilage (within 3 days)", async () => {
       const draft = await agent.draftGroceryList("household-001", mockMealPlan);
-      const itemId = draft.list.items[0]!.itemId;
+      // items[0] is oats (pantry, 90-day shelf life), which cannot be "near
+      // spoilage" two days after purchase. The perishable in this plan is the
+      // meat item (3-day shelf life), which is what the test is about.
+      const perishable =
+        draft.list.items.find((i) => i.category === "meat") ??
+        draft.list.items.find((i) => i.estimatedShelfDays <= 5);
+      expect(perishable, "fixture must contain a item that expires within 5 days").toBeDefined();
+      const itemId = perishable!.itemId;
 
       // Purchase 2 days ago
       const purchased = new Date();

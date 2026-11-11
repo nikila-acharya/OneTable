@@ -3,6 +3,8 @@
  * All changes tracked for audit, HIPAA/GDPR compliance, security investigation
  */
 
+import { createHash } from "node:crypto";
+
 export interface AuditEntry {
   id: string;
   timestamp: string;
@@ -40,9 +42,7 @@ export class AuditLogger {
 
     // Hash IP for privacy
     if (fullEntry.ipAddress) {
-      const crypto = require("crypto");
-      const hash = crypto
-        .createHash("sha256")
+      const hash = createHash("sha256")
         .update(fullEntry.ipAddress)
         .digest("hex")
         .slice(0, 8);

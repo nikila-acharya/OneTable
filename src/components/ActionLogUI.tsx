@@ -32,7 +32,7 @@ export function ActionLogUI({
   entries,
   onUndo,
   maxAge = 7,
-}: ActionLogUIProps): JSX.Element {
+}: ActionLogUIProps): React.JSX.Element {
   const [filters, setFilters] = useState<FilterOptions>({
     permissionLevel: "all",
     reversibleOnly: false,

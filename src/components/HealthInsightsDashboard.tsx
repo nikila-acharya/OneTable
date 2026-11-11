@@ -5,7 +5,9 @@
  */
 
 import React, { useMemo } from "react";
-import type { MemberProfile } from "@/agent/setup";
+import type { MemberProfile } from "@/lib/members/types";
+import { deriveAgeYears } from "@/lib/members/age";
+import type { MemberHealthData } from "../../db/schema";
 import type { CheckIn } from "@/agent/activity";
 import type { MealPlan } from "@/lib/planner";
 
@@ -15,6 +17,8 @@ export interface HealthInsightProps {
   mealPlans: MealPlan[];
   checkIns: CheckIn[];
   targetEnergyPerMember: Record<string, number>;
+  /** Health is a separate shape by design (WP-1.3): never on MemberProfile. */
+  healthByMember: Record<string, MemberHealthData | undefined>;
 }
 
 /**
@@ -24,13 +28,17 @@ function MemberHealthCard({
   member,
   checkIns,
   targetEnergy,
+  health,
 }: {
   member: MemberProfile;
   checkIns: CheckIn[];
   targetEnergy: number;
-}): JSX.Element {
+  health: MemberHealthData | undefined;
+}): React.JSX.Element {
+  const age = deriveAgeYears(member.birthYm, new Date());
+  const allergies = health?.allergies ?? [];
   // Calculate completion rate for this member
-  const memberCheckIns = checkIns.filter((c) => c.memberId === member.memberId);
+  const memberCheckIns = checkIns.filter((c) => c.memberId === member.id);
   const completionRate =
     memberCheckIns.length > 0
       ? Math.round(
@@ -53,12 +61,12 @@ function MemberHealthCard({
         {/* Age & Activity */}
         <div className="metric">
           <span className="metric-label">Age:</span>
-          <span className="metric-value">{member.age}</span>
+          <span className="metric-value">{age}</span>
         </div>
 
         <div className="metric">
           <span className="metric-label">Activity:</span>
-          <span className="metric-value">{member.activity}</span>
+          <span className="metric-value">{member.activityLevel}</span>
         </div>
 
         {/* Energy target */}
@@ -77,11 +85,11 @@ function MemberHealthCard({
         </div>
 
         {/* Allergies */}
-        {member.allergies.length > 0 && (
+        {allergies.length > 0 && (
           <div className="metric allergies">
             <span className="metric-label">Allergies:</span>
             <div className="allergy-list">
-              {member.allergies.map((allergen) => (
+              {allergies.map((allergen) => (
                 <span key={allergen} className="allergy-badge">
                   ⚠️ {allergen}
                 </span>
@@ -108,7 +116,7 @@ function MemberHealthCard({
 /**
  * Weekly Meal Stats Component
  */
-function WeeklyMealStats({ mealPlans }: { mealPlans: MealPlan[] }): JSX.Element {
+function WeeklyMealStats({ mealPlans }: { mealPlans: MealPlan[] }): React.JSX.Element {
   const stats = useMemo(() => {
     if (mealPlans.length === 0) {
       return {
@@ -192,7 +200,8 @@ export function HealthInsightsDashboard({
   mealPlans,
   checkIns,
   targetEnergyPerMember,
-}: HealthInsightProps): JSX.Element {
+  healthByMember,
+}: HealthInsightProps): React.JSX.Element {
   return (
     <div className="health-insights-dashboard">
       <h2>📊 Health & Activity Insights</h2>
@@ -203,10 +212,11 @@ export function HealthInsightsDashboard({
         <div className="members-grid">
           {members.map((member) => (
             <MemberHealthCard
-              key={member.memberId}
+              key={member.id}
               member={member}
               checkIns={checkIns}
-              targetEnergy={targetEnergyPerMember[member.memberId] || 2000}
+              health={healthByMember[member.id]}
+              targetEnergy={targetEnergyPerMember[member.id] || 2000}
             />
           ))}
         </div>

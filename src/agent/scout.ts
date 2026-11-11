@@ -299,9 +299,20 @@ export class ScoutAgent {
           foundAllergens.add("peanuts");
         } else if (tag.includes("nut")) {
           foundAllergens.add("tree_nuts");
-        } else if (tag.includes("shellfish")) {
+        } else if (
+          // The specific animal must carry its group tag: a recipe listing
+          // "shrimp" produced only the tag "shrimp", so a member allergic to
+          // shellfish was never screened against it. Same for salmon/tuna/fish.
+          /shellfish|crustacean|mollus|shrimp|prawn|crab|lobster|oyster|clam|mussel|scallop|cuttlefish|octopus|squid|snail|surimi/.test(
+            tag,
+          )
+        ) {
           foundAllergens.add("shellfish");
-        } else if (tag.includes("fish")) {
+        } else if (
+          /\b(fish|salmon|tuna|cod|halibut|sardine|anchov|trout|mackerel|haddock|tilapia|seafood)\b/.test(
+            tag,
+          )
+        ) {
           foundAllergens.add("fish");
         } else if (tag.includes("soy")) {
           foundAllergens.add("soy");

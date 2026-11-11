@@ -81,6 +81,25 @@ export interface LLMProviderConfig {
   maxTokens?: number;
 }
 
+const PROVIDERS: readonly LLMProviderConfig["provider"][] = [
+  "openrouter",
+  "openai",
+  "anthropic",
+];
+
+/**
+ * Resolve the configured provider from the environment.
+ *
+ * Replaces eight `process.env.AGENT_LLM_PROVIDER as any` casts. A cast let a
+ * typo'd value through as a valid provider, so the request would fail at call
+ * time with an opaque error; anything unrecognised now falls back to the default.
+ */
+export function resolveProvider(envValue?: string): LLMProviderConfig["provider"] {
+  return PROVIDERS.includes(envValue as LLMProviderConfig["provider"])
+    ? (envValue as LLMProviderConfig["provider"])
+    : "openrouter";
+}
+
 /**
  * Native tool call from LLM (structured, not tool_use wrapper).
  */
@@ -107,7 +126,7 @@ export class LLMClient {
 
   constructor(config?: Partial<LLMProviderConfig>) {
     this.provider = {
-      provider: process.env.AGENT_LLM_PROVIDER as any || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.AGENT_LLM_MODEL || "anthropic/claude-3.5-sonnet",
       temperature: 0.7,
       maxTokens: 2000,

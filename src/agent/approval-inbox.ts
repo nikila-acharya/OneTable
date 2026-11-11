@@ -199,6 +199,11 @@ export class ApprovalInbox {
  */
 export class ActionLog {
   private entries: ActionLogEntry[] = [];
+  // Recency tiebreaker: Date.now() has millisecond resolution, so a burst of
+  // tool calls in one turn shares a timestamp and a timestamp-only sort leaves
+  // "most recent first" undefined. Insertion order is the real recency.
+  private sequence = 0;
+  private readonly order = new WeakMap<ActionLogEntry, number>();
 
   /**
    * Record a tool call.
@@ -212,6 +217,7 @@ export class ActionLog {
       timestamp: new Date().toISOString(),
     };
 
+    this.order.set(fullEntry, ++this.sequence);
     this.entries.push(fullEntry);
     return fullEntry;
   }
@@ -222,7 +228,11 @@ export class ActionLog {
   getAll(householdId: string, limit: number = 100): ActionLogEntry[] {
     return this.entries
       .filter((e) => e.householdId === householdId)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() ||
+          (this.order.get(b) ?? 0) - (this.order.get(a) ?? 0),
+      )
       .slice(0, limit);
   }
 
@@ -332,9 +342,11 @@ export class UndoManager {
       return { success: false, reason: "No previous state recorded for this action" };
     }
 
-    // Record the undo action
-    const undoActionId = `undo-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    this.actionLog.recordCall({
+    // Record the undo action. The id must come from the log, not be invented
+    // here: recordCall assigns its own id, so the previously returned
+    // `undo-<ts>-<rand>` never addressed an entry and callers that looked the
+    // undo action up (to show it in the trail) got undefined.
+    const undoEntry = this.actionLog.recordCall({
       householdId: action.householdId,
       runId: `undo-${Date.now()}`,
       mode: "conversational",
@@ -349,9 +361,9 @@ export class UndoManager {
     });
 
     // Mark original action as undone
-    this.actionLog.markUndone(actionId, undoActionId);
+    this.actionLog.markUndone(actionId, undoEntry.id);
 
-    return { success: true, newActionId: undoActionId };
+    return { success: true, newActionId: undoEntry.id };
   }
 
   /**

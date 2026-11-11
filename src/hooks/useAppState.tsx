@@ -4,8 +4,9 @@
  * Global state management with React Context
  */
 
-import { useCallback, useReducer, useContext, createContext } from "react";
+import React, { useCallback, useReducer, useContext, createContext, useState } from "react";
 import type { ChatMessage } from "@/components/ChatUI";
+import type { InsightMember } from "@/lib/agents/persistence";
 import type { CoordinatorResponse } from "@/agent/coordinator";
 
 /**
@@ -17,18 +18,22 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   messages: ChatMessage[];
-  approvals: Array<{
-    id: string;
-    summary: string;
-    status: string;
-    expiresAt: string;
-  }>;
-  actions: Array<{
-    id: string;
-    tool: string;
-    timestamp: string;
-    reversible: boolean;
-  }>;
+  approvals: ApprovalEntry[];
+  actions: ActionEntry[];
+}
+
+export interface ApprovalEntry {
+  id: string;
+  summary: string;
+  status: string;
+  expiresAt: string;
+}
+
+export interface ActionEntry {
+  id: string;
+  tool: string;
+  timestamp: string;
+  reversible: boolean;
 }
 
 export type AppAction =
@@ -37,9 +42,9 @@ export type AppAction =
   | { type: "ADD_MESSAGE"; payload: ChatMessage }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "ADD_APPROVAL"; payload: (typeof AppState.approvals)[0] }
+  | { type: "ADD_APPROVAL"; payload: ApprovalEntry }
   | { type: "UPDATE_APPROVAL"; payload: { id: string; status: string } }
-  | { type: "ADD_ACTION"; payload: (typeof AppState.actions)[0] }
+  | { type: "ADD_ACTION"; payload: ActionEntry }
   | { type: "UNDO_ACTION"; payload: string };
 
 const initialState: AppState = {
@@ -124,47 +129,48 @@ export function useChat() {
       dispatch({ type: "SET_ERROR", payload: null });
 
       try {
+        // The route derives household + user from the session, so the body is
+        // just the message: a client cannot address another household.
         const response = await fetch("/api/agents/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            householdId: state.householdId,
-            userId: state.userId,
-            message,
-          }),
+          body: JSON.stringify({ message }),
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          const data = (await response.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data.error ?? `HTTP ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as {
+          message: string;
+          cards?: ChatMessage["cards"];
+          approvalId?: string | null;
+        };
 
-        if (data.success && data.response) {
-          // Add assistant message
-          const assistantMsg: ChatMessage = {
+        dispatch({
+          type: "ADD_MESSAGE",
+          payload: {
             id: `msg-${Date.now()}-resp`,
             role: "assistant",
-            content: data.response.message,
+            content: data.message,
             timestamp: new Date().toISOString(),
-            cards: data.response.cards,
-          };
-          dispatch({ type: "ADD_MESSAGE", payload: assistantMsg });
+            cards: data.cards,
+          },
+        });
 
-          // Add approval card if present
-          if (data.response.approvalCard) {
-            dispatch({
-              type: "ADD_APPROVAL",
-              payload: {
-                id: data.response.approvalCard.id,
-                summary: data.response.approvalCard.summary,
-                status: "pending",
-                expiresAt: data.response.approvalCard.expiresAt,
-              },
-            });
-          }
-        } else {
-          throw new Error(data.error || "Unknown error");
+        // approvalId is the DB row id; expiresAt is not returned by the route, so
+        // the inbox list endpoint remains the source of truth for the full card.
+        if (data.approvalId) {
+          dispatch({
+            type: "ADD_APPROVAL",
+            payload: {
+              id: data.approvalId,
+              summary: data.message,
+              status: "pending",
+              expiresAt: "",
+            },
+          });
         }
       } catch (error) {
         dispatch({
@@ -192,35 +198,32 @@ export function useChat() {
 export function useApprovals() {
   const { state, dispatch } = useAppState();
 
-  const approveCard = useCallback(
-    async (cardId: string, editedProposal?: Record<string, unknown>) => {
+  /**
+   * Records the decision server-side, then mirrors it locally. A refusal to
+   * reach the server is surfaced as an error and the card is left untouched:
+   * an optimistic "declined" that never persisted was a real bug here, because
+   * the row would still be pending on the next load.
+   */
+  const postDecision = useCallback(
+    async (cardId: string, decision: "approve" | "decline") => {
       dispatch({ type: "SET_LOADING", payload: true });
       dispatch({ type: "SET_ERROR", payload: null });
-
       try {
-        const response = await fetch("/api/approvals/approve", {
+        const response = await fetch(`/api/approvals/${encodeURIComponent(cardId)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            householdId: state.householdId,
-            userId: state.userId,
-            cardId,
-            editedProposal,
-          }),
+          body: JSON.stringify({ decision }),
         });
+        const data = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          status?: string;
+        };
+        if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
-
-        if (data.success) {
-          dispatch({
-            type: "UPDATE_APPROVAL",
-            payload: { id: cardId, status: "approved" },
-          });
-        } else {
-          throw new Error(data.error);
-        }
+        dispatch({
+          type: "UPDATE_APPROVAL",
+          payload: { id: cardId, status: data.status ?? decision + "d" },
+        });
       } catch (error) {
         dispatch({
           type: "SET_ERROR",
@@ -230,14 +233,19 @@ export function useApprovals() {
         dispatch({ type: "SET_LOADING", payload: false });
       }
     },
-    [state.householdId, state.userId, dispatch]
+    [dispatch]
+  );
+
+  // Edited proposals are not applied by the decision route (it records the
+  // decision only), so this hook deliberately takes no edit payload.
+  const approveCard = useCallback(
+    (cardId: string) => postDecision(cardId, "approve"),
+    [postDecision],
   );
 
   const declineCard = useCallback(
-    async (cardId: string, reason?: string) => {
-      dispatch({ type: "UPDATE_APPROVAL", payload: { id: cardId, status: "declined" } });
-    },
-    [dispatch]
+    (cardId: string) => postDecision(cardId, "decline"),
+    [postDecision],
   );
 
   return {
@@ -259,25 +267,13 @@ export function useActions() {
       dispatch({ type: "SET_ERROR", payload: null });
 
       try {
-        const response = await fetch("/api/actions/undo", {
+        const response = await fetch(`/api/actions/${encodeURIComponent(actionId)}/undo`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            householdId: state.householdId,
-            userId: state.userId,
-            actionId,
-          }),
         });
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
-
-        if (data.success) {
-          dispatch({ type: "UNDO_ACTION", payload: actionId });
-        } else {
-          throw new Error(data.error);
-        }
+        dispatch({ type: "UNDO_ACTION", payload: actionId });
       } catch (error) {
         dispatch({
           type: "SET_ERROR",
@@ -301,20 +297,16 @@ export function useActions() {
  */
 export function useInsights() {
   const { state } = useAppState();
-  const [insights, setInsights] = React.useState<Record<string, unknown> | null>(null);
+  const [insights, setInsights] = React.useState<InsightMember[] | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/insights/dashboard?householdId=${state.householdId}`
-      );
+      const response = await fetch("/api/insights");
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (data.success) {
-        setInsights(data.dashboard);
-      }
+      const data = (await response.json()) as { members?: InsightMember[] };
+      setInsights(data.members ?? []);
     } catch (error) {
       console.error("Failed to load insights:", error);
     } finally {

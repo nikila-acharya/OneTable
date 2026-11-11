@@ -18,6 +18,10 @@ export interface ChatMessage {
   toolName?: string;
 }
 
+/** Card payloads are built dynamically by agents, so read them defensively. */
+const asText = (v: unknown): string => (v == null ? "" : typeof v === "string" ? v : String(v));
+const asList = (v: unknown): string[] => (Array.isArray(v) ? v.map(asText) : []);
+
 export interface ChatUIProps {
   householdId: string;
   onSendMessage: (message: string) => Promise<CoordinatorResponse>;
@@ -27,7 +31,7 @@ export interface ChatUIProps {
 /**
  * Rich card renderer (plan diff, recipe, approval, summary, etc.)
  */
-function RichCardComponent({ card }: { card: RichCard }): JSX.Element {
+function RichCardComponent({ card }: { card: RichCard }): React.JSX.Element {
   switch (card.type) {
     case "plan_diff":
       return (
@@ -41,14 +45,14 @@ function RichCardComponent({ card }: { card: RichCard }): JSX.Element {
       return (
         <div className="card card-recipe">
           <h4>{card.title}</h4>
-          <p>{card.content.description}</p>
+          <p>{asText(card.content.description)}</p>
           <div className="recipe-meta">
-            <span>🕐 {card.content.prepMinutes}m prep</span>
-            <span>🔥 {card.content.cookMinutes}m cook</span>
-            <span>⚡ {card.content.caloriesPerServing} kcal</span>
+            <span>🕐 {asText(card.content.prepMinutes)}m prep</span>
+            <span>🔥 {asText(card.content.cookMinutes)}m cook</span>
+            <span>⚡ {asText(card.content.caloriesPerServing)} kcal</span>
           </div>
           <ul>
-            {(card.content.ingredients as string[])?.map((ing, i) => (
+            {asList(card.content.ingredients).map((ing, i) => (
               <li key={i}>{ing}</li>
             ))}
           </ul>
@@ -59,7 +63,7 @@ function RichCardComponent({ card }: { card: RichCard }): JSX.Element {
       return (
         <div className="card card-approval">
           <h4>{card.title}</h4>
-          <p className="approval-summary">{card.content.summary}</p>
+          <p className="approval-summary">{asText(card.content.summary)}</p>
           <div className="approval-actions">
             {card.actionButtons?.map((btn) => (
               <button
@@ -91,7 +95,7 @@ function RichCardComponent({ card }: { card: RichCard }): JSX.Element {
     case "message":
       return (
         <div className="card card-message">
-          <p>{card.content.text}</p>
+          <p>{asText(card.content.text)}</p>
         </div>
       );
 
@@ -107,7 +111,7 @@ function RichCardComponent({ card }: { card: RichCard }): JSX.Element {
 /**
  * Chat UI Component
  */
-export function ChatUI({ householdId, onSendMessage, initialMessages = [] }: ChatUIProps): JSX.Element {
+export function ChatUI({ householdId, onSendMessage, initialMessages = [] }: ChatUIProps): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -171,13 +175,13 @@ export function ChatUI({ householdId, onSendMessage, initialMessages = [] }: Cha
         {messages.length === 0 && (
           <div className="chat-welcome">
             <h2>Welcome to OneTable</h2>
-            <p>I'm your household meal and health agent. How can I help?</p>
+            <p>I&apos;m your household meal and health agent. How can I help?</p>
             <div className="quick-actions">
               <button onClick={() => setInput("Plan meals for next week")}>
                 📅 Plan meals
               </button>
               <button onClick={() => setInput("What should we cook today?")}>
-                🍽️ What's for dinner?
+                🍽️ What&apos;s for dinner?
               </button>
               <button onClick={() => setInput("Show activity goals")}>
                 🏃 Activity

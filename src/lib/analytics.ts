@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from "events";
+import { createHash } from "node:crypto";
 
 /**
  * Analytics event types
@@ -82,8 +83,7 @@ export class AnalyticsManager extends EventEmitter {
   trackEvent(event: AnalyticsEvent): void {
     // Hash IP for privacy
     if (event.context?.ipAddress) {
-      const hash = require("crypto")
-        .createHash("sha256")
+      const hash = createHash("sha256")
         .update(event.context.ipAddress)
         .digest("hex")
         .slice(0, 8);

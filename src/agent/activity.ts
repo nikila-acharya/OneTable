@@ -10,6 +10,7 @@
 import type { AgentExecutionContext } from "./runtime";
 import { LLMClient } from "./runtime";
 import { getAgentConfig } from "./roster";
+import { DeterministicSafetyChecker } from "./safety-rules";
 
 /**
  * Activity goal.
@@ -299,9 +300,15 @@ export class ActivityAgent {
       return { hidden: false, reason: "Tip not found" };
     }
 
-    // Check for ED signals, weight-loss language, contradiction with rules
-    const edSignals = ["weight loss", "diet", "restrict", "calories"];
-    const isED = edSignals.some((signal) => tip.content.toLowerCase().includes(signal));
+    // Use the canonical SG04 detector instead of a four-word list: "try eating
+    // less to feel better" is restriction language, but it matched none of
+    // ["weight loss","diet","restrict","calories"], so harmful pool tips were
+    // published. One source of truth for restriction signals also means the
+    // inbound guard and the tip filter cannot drift apart.
+    const restriction = DeterministicSafetyChecker.checkRestrictionSignals(tip.content, []);
+    const edSignals = ["weight loss", "diet", "restrict", "calories", "skinny", "detox", "cleanse"];
+    const isED =
+      restriction.found || edSignals.some((signal) => tip.content.toLowerCase().includes(signal));
 
     if (isED) {
       tip.visibility = "hidden";

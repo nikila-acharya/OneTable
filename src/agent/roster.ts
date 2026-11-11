@@ -4,6 +4,7 @@
  * The team bundle version is recorded on every run for eval compatibility.
  */
 
+import { resolveProvider } from "./runtime";
 import type { LLMProviderConfig } from "./runtime";
 
 export type AgentRole =
@@ -60,7 +61,7 @@ One approval card per user request: merge specialist proposals into a single car
 Always explain which tool ran and link to the action log when data changes.`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.COORDINATOR_MODEL || "anthropic/claude-3.5-sonnet",
       temperature: 0.7,
       maxTokens: 2500,
@@ -98,7 +99,7 @@ Never:
 Always create a review card for member updates — never change data directly.`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.SETUP_MODEL || "anthropic/claude-3.5-sonnet",
       temperature: 0.7,
       maxTokens: 2000,
@@ -139,7 +140,7 @@ Never:
 - Bypass the user's confirmation on bulk imports`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.SCOUT_MODEL || "anthropic/claude-3.5-haiku",
       temperature: 0.5,
       maxTokens: 1500,
@@ -180,7 +181,7 @@ Never:
 - Make up recipe suggestions — use the draft planner only`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.PLANNER_MODEL || "anthropic/claude-3.5-sonnet",
       temperature: 0.7,
       maxTokens: 2500,
@@ -226,7 +227,7 @@ Never:
 - Send to Instacart without an approval card`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.GROCERY_MODEL || "anthropic/claude-3.5-haiku",
       temperature: 0.5,
       maxTokens: 1500,
@@ -267,7 +268,7 @@ Activity goals:
 - Opt-in only — never assign without approval`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.ACTIVITY_MODEL || "anthropic/claude-3.5-haiku",
       temperature: 0.5,
       maxTokens: 1200,
@@ -311,7 +312,7 @@ Output:
 - A summary for the user: "You cooked 85% of this week's meals, skipped salmon twice. I've boosted chicken and reduced seafood slightly."`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.REVIEWER_MODEL || "anthropic/claude-3.5-haiku",
       temperature: 0.5,
       maxTokens: 1500,
@@ -357,7 +358,7 @@ Block conditions:
 If a message fails a check, rewrite it once with the failure reason. If it fails again, show the safe fallback.`,
 
     model: {
-      provider: (process.env.AGENT_LLM_PROVIDER as any) || "openrouter",
+      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
       model: process.env.GUARDIAN_MODEL || "anthropic/claude-3.5-haiku",
       temperature: 0.3, // Lower temperature for safety
       maxTokens: 800,

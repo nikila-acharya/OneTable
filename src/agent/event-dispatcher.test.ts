@@ -174,8 +174,11 @@ describe('EventDispatcher', () => {
       await dispatcher.scheduleWeekly('household1', 4, 9, 'UTC');
       const event = dispatcher.getScheduledEvents()[0];
 
-      // Manually trigger without registering agent would throw
-      expect(dispatcher.getMealPlannerError).toBeUndefined();
+      // callMealPlanner is the guard: it refuses to run with no planner registered
+      await expect(
+        (dispatcher as unknown as { callMealPlanner(h: string, t: string): Promise<unknown> })
+          .callMealPlanner("household1", "UTC"),
+      ).rejects.toThrow("MealPlanner agent not registered");
     });
   });
 
