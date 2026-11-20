@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vercel's machine-written project metadata (already gitignored). It is not
+    // source, and the CLI rewrites it, so linting it couples `npm run lint` to
+    // whatever tool files happen to be sitting in the working tree.
+    ".vercel/**",
   ]),
 ]);
 

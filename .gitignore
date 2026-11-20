@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# PRD §10.4 requires the blank template to be committed; .env* would swallow it.
+!.env.example
 
 # vercel
 .vercel
