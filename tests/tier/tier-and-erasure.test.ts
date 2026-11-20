@@ -41,22 +41,36 @@ describe.skipIf(!hasDb)("WP-1.5 tiers and erasure (live DB)", () => {
     return { householdId: hh!.id, email };
   }
 
-  describe("AC01 member limits (enforced on the server)", () => {
-    it("a free household has one member; the second add is refused and nothing is saved", async () => {
+  describe("AC01 household-size cap (ADR-117: free app, 10 members)", () => {
+    it("a free household can save 10 members; the 11th is refused and not written", async () => {
+      // Was: the 2nd member was refused. AC01's "free single member" split is
+      // retired, so a normal family must be able to set up everyone at once.
       const { householdId } = await newHousehold("free");
-      await createMember(db, householdId, profile("First"), NOW);
-      await expect(createMember(db, householdId, profile("Second"), NOW)).rejects.toBeInstanceOf(TierLimitError);
-      expect(await listMembers(db, householdId)).toHaveLength(1);
+      for (let i = 0; i < 10; i++) await createMember(db, householdId, profile(`M${i}`), NOW);
+      await expect(createMember(db, householdId, profile("M10"), NOW)).rejects.toBeInstanceOf(TierLimitError);
+      expect(await listMembers(db, householdId)).toHaveLength(10);
     });
 
-    it("a household plan allows up to 8 members; the 9th is refused", async () => {
+    it("the household tier carries the same cap, so no tier unlocks more members", async () => {
       const { householdId } = await newHousehold("household");
-      for (let i = 0; i < 8; i++) await createMember(db, householdId, profile(`M${i}`), NOW);
-      await expect(createMember(db, householdId, profile("M8"), NOW)).rejects.toBeInstanceOf(TierLimitError);
-      expect(await listMembers(db, householdId)).toHaveLength(8);
+      for (let i = 0; i < 10; i++) await createMember(db, householdId, profile(`M${i}`), NOW);
+      await expect(createMember(db, householdId, profile("M10"), NOW)).rejects.toBeInstanceOf(TierLimitError);
+      expect(await listMembers(db, householdId)).toHaveLength(10);
     });
 
-    it("the billing stub upgrades a household, and the next add is allowed", async () => {
+    it("states the cap instead of pointing at an upgrade that grants nothing", async () => {
+      // The old text was "your free plan includes 1 member; upgrade to add
+      // more" — and upgrading now changes nothing about the cap, so that
+      // instruction was a dead end for the user.
+      const { householdId } = await newHousehold("free");
+      for (let i = 0; i < 10; i++) await createMember(db, householdId, profile(`M${i}`), NOW);
+      await expect(createMember(db, householdId, profile("M10"), NOW)).rejects.toThrow(
+        /at most 10 members/,
+      );
+      await expect(createMember(db, householdId, profile("M10"), NOW)).rejects.not.toThrow(/upgrade/);
+    });
+
+    it("the billing stub still flips the tier (it just no longer changes the cap)", async () => {
       const { householdId } = await newHousehold("free");
       await createMember(db, householdId, profile("First"), NOW);
       await setHouseholdTier(db, householdId, "household");

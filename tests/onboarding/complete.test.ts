@@ -93,10 +93,31 @@ describe.skipIf(!hasDb)("WP-1.6 onboarding completion (live DB)", () => {
     expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(0);
   });
 
-  it("a free household cannot save two members; nothing is written", async () => {
+  it("a free household can save a full family of 10 members", async () => {
+    // AC01's free cap of 1 member is retired (ADR-117). This is the case that
+    // used to dead-end at step 6 for exactly the household size PRD 3 targets.
     const hid = await newHousehold("free");
-    const d = draft({}, [adult("One"), adult("Two")]);
-    await expect(completeOnboarding(db, hid, d, NOW)).rejects.toBeInstanceOf(OnboardingRejectedError);
+    const many = Array.from({ length: 10 }, (_, i) => adult(`Member ${i + 1}`));
+    const res = await completeOnboarding(db, hid, draft({}, many), NOW);
+    expect(res.members).toBe(10);
+    expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(10);
+  });
+
+  it("an 11th member is refused, and the message reports the COUNT not the cap", async () => {
+    const hid = await newHousehold("free");
+    const many = Array.from({ length: 11 }, (_, i) => adult(`Member ${i + 1}`));
+    const err = await completeOnboarding(db, hid, draft({}, many), NOW).then(
+      () => null,
+      (e) => e,
+    );
+    expect(err).toBeInstanceOf(OnboardingRejectedError);
+    const issues = (err as OnboardingRejectedError).issues;
+    const text = issues.join(" · ");
+    // The old text interpolated the cap: an 11-member draft on a 1-member cap
+    // said "this plan includes 1 members" — naming the wrong number entirely.
+    expect(text).toContain("11 members");
+    expect(text).toContain("at most 10");
+    expect(text).not.toMatch(/^this plan includes 1 members$/);
     expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(0);
   });
 

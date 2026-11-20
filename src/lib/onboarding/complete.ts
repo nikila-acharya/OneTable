@@ -47,7 +47,14 @@ export async function completeOnboarding(
   const [hh] = await db.select({ tier: household.tier }).from(household).where(eq(household.id, householdId));
   if (!hh) throw new OnboardingRejectedError(["household not found"]);
   const limit = MEMBER_LIMIT[hh.tier as Tier];
-  if (draft.members.length > limit) issues.push(`this plan includes ${limit} members`);
+  if (draft.members.length > limit)
+    // Reported the CAP instead of the COUNT: a 4-member draft against a
+    // 1-member cap read "this plan includes 1 members", hiding the one number
+    // that explained the rejection. Also states the limit without pointing at
+    // an upgrade, since no tier now grants more than `limit`.
+    issues.push(
+      `this plan includes ${draft.members.length} members, but a household can have at most ${limit}`,
+    );
 
   const settingsInput: SettingsInput = {
     weekdayBreakfastMinutes: draft.household.weekdayBreakfastMinutes,
