@@ -30,6 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    outputs:
+      # Step outputs are NOT visible through needs.<job>.outputs.<name> until the
+      # job maps them here. Without this line the verify job received an empty
+      # PROD_URL even though the deploy step had written $GITHUB_OUTPUT, and the
+      # smoke check failed with "no production URL" (run 44775795010).
+      prod_url: ${{ steps.deploy.outputs.prod_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -86,8 +92,15 @@ jobs:
           fi
           printf '%s\n' "$out"
           alias_url="$(printf '%s\n' "$out" \
-            | sed 's/\x1b\[[0-9;]*m//g' \
+            | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g; s/\x1b\][^\x07]*\x07//g' \
             | awk '/Aliased/ { for (i = 1; i <= NF; i++) if ($i ~ /^https:\/\//) { print $i; exit } }')"
+          # Vercel's progress lines use CSI forms that end in K/A/G (erase line,
+          # cursor up, cursor to column), not just the colour sequences ending in
+          # m, so a `[0-9;]*m` strip leaves control bytes glued to the fields.
+          if [ -z "$alias_url" ]; then
+            echo "::warning::could not parse a production alias from the deploy output; the smoke check will fall back to vars.APP_URL"
+          fi
+          echo "parsed prod_url=$alias_url"
           echo "prod_url=$alias_url" >> "$GITHUB_OUTPUT"
 
   verify:
