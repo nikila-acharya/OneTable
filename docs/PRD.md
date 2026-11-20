@@ -94,7 +94,7 @@ Personas are [Guessing] until validated with interviews.
 | Code | Feature | Scope | Stage | Milestone |
 |---|---|---|---|---|
 | ON01 | Household onboarding flow (6 steps) | MVP | 1–3 | M1 (steps 1–4, 6), M2 (step 5) |
-| AC01 | Freemium: free single member, paid household plan | MVP | 1, 6 | M1 (tiers), M7 (billing) |
+| AC01 | Household-size cap: **10 members on every tier** (was freemium: free 1 / paid up to 8) — superseded by ADR-117, 2026-11-20 | MVP | 1, 6 | M1 (tiers); M7 billing deferred |
 | PV01 | Opt-in consent per data type; no ad-network sharing | MVP | 1–2 | M1 |
 | PV02 | Parent-managed child profiles; no child logins | MVP | 2 | M1 |
 | PV03 | Data deletion on request | MVP | 2 | M1 |
@@ -165,12 +165,25 @@ The first-run flow that creates the **household profile**. It is a 6-step guided
 
 ### 5.1 Account, plans and privacy (AC01, PV01–PV03)
 
-**AC01 Freemium account**
+**AC01 Household size and plan**
 - One account per household, owned by one User (email + password, or a magic link).
-- Two tiers: **Free** (1 member profile, limited agent runs) and **Household** (up to 8 members [Proposed], condition modes, Instacart handoff, scheduled agent runs).
-- AC: a Free account attempting to add a second member (via form or agent) gets an upgrade prompt and nothing is saved.
-- AC: tier checks happen on the server, not only in the UI.
-- Billing is a stub flag (`household_plan: true/false`) until M7. No real payments without owner approval (Section 13.3).
+- **The app is free.** Owner decision 2026-11-20 (ADR-117) retires the
+  freemium split: the two tier values remain in the schema, but both carry the
+  same cap of **10 members**. Previously: **Free** (1 member profile, limited
+  agent runs) and **Household** (up to 8 members [Proposed], condition modes,
+  Instacart handoff, scheduled agent runs).
+- AC: a household can save up to 10 member profiles. The 11th is refused on the
+  server and nothing is written for it.
+- AC: a refusal names the household's member **count** and the cap. It must not
+  instruct the user to upgrade, because no tier grants more members.
+- AC: the cap is checked on the server, not only in the UI.
+- Billing stays a stub flag (`household_plan: true/false`) until M7, and no real
+  payments happen without owner approval (Section 13.3). While both caps are
+  equal the flag grants nothing; re-introducing a paid tier needs a new ADR that
+  re-differentiates what it buys.
+- "Limited agent runs" is not enforced anywhere. The PRD-declared monthly caps
+  (`AGENT_MONTHLY_TOKEN_BUDGET_FREE` / `_HOUSEHOLD`) are read by no code — see
+  10.4. With a free app there is no reason to add them before M7.
 
 **PV01 Consent per data type**
 - Separate, plain-language opt-ins for: health conditions, allergies, body measurements (height/weight), activity data, and **agent processing of household data by the LLM provider** [Proposed].
