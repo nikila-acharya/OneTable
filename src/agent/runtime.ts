@@ -88,6 +88,46 @@ const PROVIDERS: readonly LLMProviderConfig["provider"][] = [
 ];
 
 /**
+ * Model pinned by ADR-016 (APPROVED, 2026-11-03): OpenRouter + Claude 3.5 Sonnet.
+ * Previously the code used the moving alias `anthropic/claude-3.5-sonnet`; the ADR
+ * names the dated snapshot, so an unannounced model change could not alter
+ * Guardian behaviour while the eval baseline still claimed ADR-016 compliance.
+ */
+export const DEFAULT_AGENT_MODEL = "anthropic/claude-3.5-sonnet-20241022";
+
+/**
+ * PRD §10.4 provider variable.
+ *
+ * The code used to read `AGENT_LLM_PROVIDER`, which is not in the §10.4 list — so
+ * the `LLM_PROVIDER` value set on Vercel was silently ignored and every deploy
+ * fell back to the built-in default. The legacy name is still honoured as a
+ * fallback so existing shells keep working, but the PRD name wins.
+ */
+export function llmProvider(): LLMProviderConfig["provider"] {
+  return resolveProvider(process.env.LLM_PROVIDER ?? process.env.AGENT_LLM_PROVIDER);
+}
+
+/**
+ * PRD §10.4 model chain for one agent:
+ *   AGENT_MODEL_<NAME>  →  AGENT_MODEL_DEFAULT  →  ADR-016 model
+ *
+ * `agentKey` is the PRD's <NAME> segment, e.g. "GUARDIAN" for AGENT_MODEL_GUARDIAN.
+ * The older `<NAME>_MODEL` spelling is accepted as a fallback for the same reason
+ * as above. Callers may pass an explicit fallback for deliberately cheaper
+ * agents; that keeps the override working while leaving per-agent cost choices
+ * visible at the call site.
+ */
+export function agentModel(agentKey: string, fallback?: string): string {
+  return (
+    process.env[`AGENT_MODEL_${agentKey}`] ??
+    process.env[`${agentKey}_MODEL`] ??
+    process.env.AGENT_MODEL_DEFAULT ??
+    fallback ??
+    DEFAULT_AGENT_MODEL
+  );
+}
+
+/**
  * Resolve the configured provider from the environment.
  *
  * Replaces eight `process.env.AGENT_LLM_PROVIDER as any` casts. A cast let a
@@ -126,8 +166,8 @@ export class LLMClient {
 
   constructor(config?: Partial<LLMProviderConfig>) {
     this.provider = {
-      provider: resolveProvider(process.env.AGENT_LLM_PROVIDER),
-      model: process.env.AGENT_LLM_MODEL || "anthropic/claude-3.5-sonnet",
+      provider: llmProvider(),
+      model: process.env.AGENT_LLM_MODEL ?? process.env.AGENT_MODEL_DEFAULT ?? DEFAULT_AGENT_MODEL,
       temperature: 0.7,
       maxTokens: 2000,
       ...config,
