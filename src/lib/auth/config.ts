@@ -93,26 +93,64 @@ export const credentialsProvider = Credentials({
   },
 });
 
+// Session lifetime. Auth.js JWT semantics: `maxAge` is the idle window (the
+// token is re-issued with a fresh expiry whenever it is refreshed), and
+// `updateAge` is how often that re-issue happens. So an actively used session
+// survives indefinitely while an abandoned token stops working after maxAge.
+//
+// 15 minutes was chosen to bound the PV03 revocation gap: with database
+// sessions, deleting a household's session rows signed people out at once; a
+// JWT cannot be revoked, so the worst case is now maxAge. Tightening or
+// loosening it is an env change, not a deploy.
+const sessionMaxAge = Number(process.env.AUTH_SESSION_MAX_AGE_SECONDS?.trim() || 900);
+const sessionUpdateAge = Number(process.env.AUTH_SESSION_UPDATE_AGE_SECONDS?.trim() || 300);
+
 export const authConfig: NextAuthConfig = {
   adapter,
   session: {
-    // Server-side sessions: sign-out is instant, and PV03 household deletion
-    // can kill live sessions by deleting rows.
-    strategy: 'database',
+    // The Credentials provider has no database-session path: Auth.js cannot
+    // write a session row for it, so sign-in returned HTTP 200 and set a
+    // session cookie that resolved to nothing — `/api/auth/session` answered
+    // null and every authenticated route 401'd, which dead-ended onboarding at
+    // step 6 (POST /api/onboarding/complete -> 401). Reproduced against both
+    // production and a clean local dev server, so it is this config, not the
+    // environment. The adapter stays for the nodemailer provider's
+    // verification tokens and user lookup.
+    strategy: 'jwt',
+    maxAge: Number.isInteger(sessionMaxAge) && sessionMaxAge > 0 ? sessionMaxAge : 900,
+    updateAge: Number.isInteger(sessionUpdateAge) && sessionUpdateAge > 0 ? sessionUpdateAge : 300,
   },
   pages: {
-    signIn: '/login',
-    verifyRequest: '/login/check-email',
-    error: '/login',
+    // '/login' and '/login/check-email' never existed (both 404), so any
+    // Auth.js redirect to sign-in landed on a dead page. /onboarding step 1 is
+    // the real sign-in surface: it collects email + password and, when the
+    // address is already taken (409), completes a credentials sign-in. A
+    // dedicated sign-in page is still worth building; until then a working
+    // route beats a documented-but-missing one.
+    signIn: '/onboarding',
+    verifyRequest: '/onboarding',
+    error: '/onboarding',
   },
   providers: [nodemailerProvider, credentialsProvider],
   callbacks: {
-    session({ session, user }) {
-      // `user` is the adapter row (every column, including our householdId).
-      const au = user as AdapterUser & { householdId?: string };
+    jwt({ token, user }) {
+      // `user` is present ONLY on the sign-in request. Under the previous
+      // database strategy the session callback saw the adapter row every time;
+      // copying these onto the token here is what keeps requireUser() working
+      // on every later request instead of just the first one.
+      if (user) {
+        const au = user as AdapterUser & { householdId?: string };
+        token.uid = user.id;
+        token.householdId = au.householdId ?? '';
+      }
+      return token;
+    },
+    session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.householdId = au.householdId ?? '';
+        session.user.id = token.uid ?? '';
+        // '' is the signal requireUser() uses to force a fresh sign-in, matching
+        // the database-session behaviour it already documents.
+        session.user.householdId = token.householdId ?? '';
       }
       return session;
     },
