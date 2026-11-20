@@ -10,7 +10,8 @@
 # Secrets required (Settings → Secrets and variables → Actions):
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 #   DATABASE_URL_STAGING, DATABASE_URL_PRODUCTION     (already set)
-# Optional repo variable: vars.APP_URL (defaults to https://onetable.app)
+# Optional repo variable: vars.APP_URL. When unset, the smoke check uses the
+# production alias that `vercel deploy --prod` reports for this deployment.
 
 name: Deploy
 
@@ -65,42 +66,79 @@ jobs:
         run: npm run db:migrate
 
       - name: Deploy to Vercel
+        id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: npx vercel deploy --prod --token="$VERCEL_TOKEN" --yes
+        run: |
+          set -euo pipefail
+          # `vercel deploy --prod` prints two hosts. Only the alias line is
+          # usable by a smoke check:
+          #   ▲ Aliased         https://one-table-gamma.vercel.app   <- public
+          #   Production        https://one-table-<id>-<team>.vercel.app
+          # The per-deployment host sits behind Vercel deployment protection and
+          # answers 302 to unauthenticated requests, so probing it reports a
+          # healthy deployment as broken.
+          if ! out="$(npx vercel deploy --prod --token="$VERCEL_TOKEN" --yes 2>&1)"; then
+            printf '%s\n' "$out"
+            exit 1
+          fi
+          printf '%s\n' "$out"
+          alias_url="$(printf '%s\n' "$out" \
+            | sed 's/\x1b\[[0-9;]*m//g' \
+            | awk '/Aliased/ { for (i = 1; i <= NF; i++) if ($i ~ /^https:\/\//) { print $i; exit } }')"
+          echo "prod_url=$alias_url" >> "$GITHUB_OUTPUT"
 
   verify:
     name: Smoke check
     runs-on: ubuntu-latest
     needs: deploy
     if: github.ref_name == 'main'
+    env:
+      # The alias Vercel reported for this deployment. vars.APP_URL remains an
+      # explicit override for a custom domain. There is deliberately no
+      # built-in default: the previous one (https://onetable.app) was a
+      # placeholder that is not this project, so the check failed with 404
+      # against somebody else's host and hid the real state of the deployment.
+      URL_OVERRIDE: ${{ vars.APP_URL }}
+      PROD_URL: ${{ needs.deploy.outputs.prod_url }}
     steps:
       - name: Wait for /api/health to answer
-        env:
-          APP_URL: ${{ vars.APP_URL }}
         run: |
-          url="${APP_URL:-https://onetable.app}"
+          set -uo pipefail
+          url="${PROD_URL:-$URL_OVERRIDE}"
+          if [ -z "$url" ]; then
+            echo "::error no production URL: deploy reported no alias and vars.APP_URL is unset"
+            exit 1
+          fi
+          echo "probing $url"
           for i in $(seq 1 20); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$url/api/health" || echo 000)
-            echo "attempt $i -> $code"
-            [ "$code" = "200" ] && echo "healthy" && exit 0
-            sleep 15
+            body="$(curl -s -m 20 "$url/api/health" || true)"
+            code="$(curl -s -m 20 -o /dev/null -w '%{http_code}' "$url/api/health" || echo 000)"
+            echo "attempt $i -> $code ${body}"
+            # The body is a fixed status object with no secrets in it, and
+            # logging it is what distinguishes "route missing" from "database
+            # unreachable" — a bare status code did not, last run.
+            case "$code" in
+              200) echo "healthy"; exit 0 ;;
+              404|000) ;; # not up yet, keep polling
+              *) sleep 15 ;;
+            esac
           done
-          echo "::error $url/api/health never returned 200 (last: $code)"
+          echo "::error $url/api/health never returned 200 (last: $code ${body})"
           exit 1
 
       # A 404 means the route never shipped. 401 is the expected answer here:
       # these routes require a session and the check sends none.
       - name: Agent routes are mounted
-        env:
-          APP_URL: ${{ vars.APP_URL }}
         run: |
-          url="${APP_URL:-https://onetable.app}"
+          set -uo pipefail
+          url="${PROD_URL:-$URL_OVERRIDE}"
+          [ -n "$url" ] || { echo "::error no production URL"; exit 1; }
           fail=0
           for path in /api/approvals /api/actions /api/insights; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$url$path")
+            code=$(curl -s -m 20 -o /dev/null -w '%{http_code}' "$url$path")
             echo "$path -> $code"
             if [ "$code" = "404" ] || [ "$code" = "000" ]; then
               echo "::error $path is not mounted"; fail=1
