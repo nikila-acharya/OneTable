@@ -7,16 +7,17 @@
  * needs to be true across requests has to be persisted, and nothing is
  * persisted today — see `errorReporting` below.
  *
- * What this deliberately does NOT do: report the dashboard from
- * `src/lib/monitoring.ts`. That module has no production callers and no tests,
- * its `getDashboard()` reads in-memory arrays that are empty on a fresh
- * instance (so `errorRate: 0, uptime: 100` would be a guess that always looks
- * healthy), `errorRate` is a count rather than a rate, and its Sentry call posts
- * to the placeholder URL "https://sentry.io/api/...". Surfacing those numbers
- * here would have made dead scaffolding look like observability.
+ * What this deliberately does NOT do: report a dashboard of collected metrics.
+ * `src/lib/monitoring.ts` (and `analytics.ts`, `audit.ts`) were deleted in
+ * ADR-118 rather than wired up here: no production callers, no tests, a Sentry
+ * call to the placeholder URL "https://sentry.io/api/...", PagerDuty alerts
+ * fired without await, health checks using a relative URL that cannot resolve
+ * server-side, and `errorRate`/`uptime` computed from in-memory arrays that read
+ * healthy on every cold start. Surfacing those would have made dead scaffolding
+ * look like observability - and their household-keyed in-memory stores would
+ * have been invisible to PV03 erasure.
  *
- * Privacy: no household, member, or user data is read or returned. Only whether
- * an integration's env var is SET — the value never leaves the environment.
+ * Privacy: no household, member, or user data is read or returned.
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
@@ -57,8 +58,6 @@ export async function GET(request: Request) {
     db = { status: "unreachable" };
   }
 
-  const set = (name: string) => Boolean(process.env[name]);
-
   const degraded = db.status !== "ok";
   return NextResponse.json(
     {
@@ -69,14 +68,13 @@ export async function GET(request: Request) {
         "Serverless: figures describe this instance since its last cold start, not the deployment.",
       uptimeSec: Math.round(process.uptime()),
       checks: { database: db },
-      integrations: {
-        // Presence only. Unset means alerting and error reporting are inert.
-        pagerduty: set("PAGERDUTY_KEY"),
-        datadog: set("DATADOG_API_KEY"),
-        sentry: set("SENTRY_DSN"),
-      },
+      // Honest gaps, not future work that already exists. There is deliberately
+      // no `integrations` presence block here: ADR-118 removed the only code
+      // that would have used those keys, so advertising them as settable would
+      // invite someone to configure alerting that cannot fire.
       errorReporting: "not_implemented",
       persistedMetrics: false,
+      alerting: "not_implemented",
     },
     // Not 200 when degraded: a status probe that answers "OK" while reporting a
     // failure is worse than no probe, because automation reads the code.

@@ -98,15 +98,23 @@ describe("body", () => {
     expect(body.persistedMetrics).toBe(false);
   });
 
-  it("reports integration presence as booleans, never values", async () => {
-    vi.stubEnv("PAGERDUTY_KEY", "pd-secret-should-never-appear");
-    vi.stubEnv("DATADOG_API_KEY", "dd-secret-should-never-appear");
-    const res = await (await route()).GET(request(auth()));
-    const text = await res.text();
-    const body = JSON.parse(text);
-    expect(body.integrations).toEqual({ pagerduty: true, datadog: true, sentry: false });
-    expect(text).not.toContain("pd-secret-should-never-appear");
-    expect(text).not.toContain("dd-secret-should-never-appear");
+  it("does not advertise vendor-key presence now that nothing uses those keys", async () => {
+    // ADR-118 deleted the only code that read PAGERDUTY_KEY / DATADOG_API_KEY /
+    // SENTRY_DSN. Reporting them as configurable would invite someone to set up
+    // alerting that cannot fire, so the field is gone entirely.
+    vi.stubEnv("PAGERDUTY_KEY", "pd-secret");
+    vi.stubEnv("DATADOG_API_KEY", "dd-secret");
+    const text = await (await (await route()).GET(request(auth()))).text();
+    expect(text).not.toContain("integrations");
+    expect(text).not.toContain("pd-secret");
+    expect(text).not.toContain("dd-secret");
+  });
+
+  it("names alerting as unimplemented alongside error reporting", async () => {
+    const body = await (await (await route()).GET(request(auth()))).json();
+    expect(body.alerting).toBe("not_implemented");
+    expect(body.errorReporting).toBe("not_implemented");
+    expect(body.persistedMetrics).toBe(false);
   });
 
   it("never echoes the monitoring token", async () => {

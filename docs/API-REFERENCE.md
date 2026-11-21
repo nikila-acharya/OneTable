@@ -2,9 +2,13 @@
 
 Documents the routes that exist in `src/app/**/route.ts`. Anything not listed here
 is not implemented — including `/api/analytics/*` and `/api/audit/*`, which were
-described in an earlier draft of this file but never built. `src/lib/analytics.ts`,
-`src/lib/audit.ts` and `src/lib/monitoring.ts` are **library modules only**; no
-route exposes them yet.
+described in an earlier draft of this file but never built.
+
+The library modules behind those names (`src/lib/analytics.ts`,
+`src/lib/audit.ts`, `src/lib/monitoring.ts`) were **deleted** rather than left as
+unrouted scaffolding — see `docs/decisions/118-remove-dead-m6-observability-scaffolding.md`.
+Real analytics belongs to WP-7.4 against the PRD §15 event names, and must be
+storage-backed so PV03 erasure reaches it.
 
 ## Authentication
 
@@ -78,25 +82,28 @@ The comparison is exact and constant-time (SHA-256 of both sides, then
   "scopeNote": "Serverless: figures describe this instance since its last cold start, not the deployment.",
   "uptimeSec": 41,
   "checks": { "database": { "status": "ok", "latencyMs": 14 } },
-  "integrations": { "pagerduty": false, "datadog": false, "sentry": false },
   "errorReporting": "not_implemented",
-  "persistedMetrics": false
+  "persistedMetrics": false,
+  "alerting": "not_implemented"
 }
 ```
 
-Read the two flags at the bottom as the honest state of M6, not as future work
-that is already done:
+Read the three flags at the bottom as the honest state of observability, not as
+future work that is already done:
 
 - **`errorReporting: "not_implemented"`** — errors are logged per request (see
-  `serverError()` in `src/lib/api/errors.ts`) but nothing is collected.
+  `serverError()` in `src/lib/api/errors.ts`) but nothing is collected anywhere.
 - **`persistedMetrics: false`** — nothing is stored across requests, so there is
-  no series, no history and no alerting. `integrations` reports presence only.
+  no series and no history.
+- **`alerting: "not_implemented"`** — nothing notifies anyone. There is
+  deliberately no vendor-key presence block: the code that would have used
+  `PAGERDUTY_KEY` / `DATADOG_API_KEY` / `SENTRY_DSN` was removed in ADR-118, so
+  setting them does nothing.
 
 No household, member, user or health field appears in this response, and the
-token itself is never echoed. `src/lib/monitoring.ts` is deliberately not used
-here: its dashboard numbers are in-memory arrays that read healthy on every cold
-start, and its Sentry call posts to a placeholder URL. See
-`src/app/api/monitoring/status/route.ts`.
+token itself is never echoed. See
+`src/app/api/monitoring/status/route.ts` for why this reports only facts
+knowable inside one request.
 
 ---
 
