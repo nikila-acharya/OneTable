@@ -52,3 +52,25 @@ build.log
 /blob-report/
 npm-pw-install.log
 npm-pw-browser.log
+
+# --- Root-level strays from probe/debug sessions (local only) --------------
+# Verified project status lives in docs/, ADRs and CI - never in a root report
+# file. These patterns stop a future `git add .` from committing a stale
+# "COMPLETE ✅" claim: PROJECT-SUMMARY.md asserted M6 shipped when nothing in it
+# had a caller (docs/decisions/118).
+/PROJECT-SUMMARY.md
+/BUILD_REPORT.md
+/COMPLETION-STATUS.md
+/M[0-9]-*.md
+/M[0-9]*-BUILD-REPORT.md
+/WP-*-BUILD-REPORT.md
+/WP-*-SUMMARY.md
+*-BUILD-REPORT.md
+
+# Session artefacts that must never be tracked (cookies/CSRF are credentials).
+/local-cookies.txt
+/lcsrf.json
+/.hermes-tmp.*
+/dz*.txt
+/draft*.json
+/test-output.txt
