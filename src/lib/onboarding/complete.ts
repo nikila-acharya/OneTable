@@ -3,15 +3,21 @@
  * Order: validate everything -> tier pre-check -> household -> consent ->
  * members (+ encrypted health, only with consent) -> attendance.
  * Validation runs before any write, so a rejected draft writes nothing.
- * The sequential writes are not one transaction; see ADR-008.
+ * Steps 2-4 run in ONE transaction (ADR-008 as amended): a failure anywhere
+ * leaves nothing behind. The previous version of this comment claimed the
+ * writes were "not one transaction", which had already been overtaken by the
+ * ADR's amendment — believing it produced a wrong bug report, so it is
+ * corrected here rather than left to mislead again.
+ * Member writes are idempotent: re-running completion updates the profiles it
+ * already created instead of inserting a second copy (see step 4).
  */
 import { eq } from "drizzle-orm";
-import { household } from "../../../db/schema";
+import { household, member } from "../../../db/schema";
 import type { Db } from "../db";
 import type { OnboardingDraft, MemberDraft, MemberMeals } from "../../app/onboarding/store";
 import { ALLERGENS, CONDITIONS } from "../health/enums";
 import { validateProfile } from "../members/validation";
-import { createMember, setAttendance, type AttendanceEntry } from "../members/service";
+import { createMember, setAttendance, updateMember, type AttendanceEntry } from "../members/service";
 import { validateHealthPatch, type HealthPatch } from "../health/validation";
 import { writeHealth } from "../health/service";
 import { grantConsent } from "../consent/service";
@@ -129,10 +135,43 @@ export async function completeOnboarding(
     }
 
     // 4. Members, then their health and meal attendance.
+    //
+    // Completion is IDEMPOTENT. Running it twice must leave the same member
+    // rows, not a second copy of everyone: the code below used to insert
+    // unconditionally, so a household that re-completed silently doubled every
+    // profile and then planned meals for twice as many people as it has.
+    //
+    // Matching is on (name, birthYm) with multiset semantics, because member.id
+    // is server-generated and the draft's client id is never stored, so no
+    // stronger key exists. Genuine twins sharing a name and month still work:
+    // each existing row can be claimed only once, so the second twin gets its
+    // own row rather than collapsing onto the first.
+    //
+    // Deliberately NOT delete-and-reinsert: every foreign key to member is ON
+    // DELETE CASCADE, including plan rows (db/schema.ts), so rebuilding the set
+    // would quietly destroy a returning household's plans, health records and
+    // check-ins. Removal therefore stays an explicit Household-tab action
+    // (WP-1.2), and a member dropped from the draft is left untouched.
     const idMap = new Map<string, string>();
+    const existingRows = await t
+      .select({ id: member.id, name: member.name, birthYm: member.birthYm })
+      .from(member)
+      .where(eq(member.householdId, householdId));
+    const claimed = new Set<string>();
     for (const { m, profile, health } of plans) {
       if (!profile.ok) continue;
-      const memberId = await createMember(t, householdId, profile.value as Parameters<typeof createMember>[2], now);
+      const p = profile.value as Parameters<typeof createMember>[2];
+      const match = existingRows.find(
+        (row) => !claimed.has(row.id) && row.name === p.name && row.birthYm === p.birthYm,
+      );
+      let memberId: string;
+      if (match) {
+        claimed.add(match.id);
+        await updateMember(t, householdId, match.id, p, now);
+        memberId = match.id;
+      } else {
+        memberId = await createMember(t, householdId, p, now);
+      }
       idMap.set(m.id, memberId);
       if (health) await writeHealth(t, householdId, memberId, health);
     }
