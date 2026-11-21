@@ -9,6 +9,7 @@ import { getDb } from "@/lib/db";
 import { linkWebsite } from "@/lib/sources/service";
 import { getBoss } from "@/lib/intake/boss";
 import { enqueueImport } from "@/lib/intake/jobs";
+import { serverError } from "../../../../../lib/api/errors";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -39,6 +40,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ card: res.card }, { status: 201 });
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/sources/[id]/website", e);
   }
 }

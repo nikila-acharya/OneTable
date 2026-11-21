@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { AuthenticationError, requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { householdInsights } from "@/lib/agents/persistence";
+import { serverError } from "../../../lib/api/errors";
 
 export async function GET() {
   try {
@@ -16,6 +17,6 @@ export async function GET() {
     if (e instanceof AuthenticationError) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/insights", e);
   }
 }

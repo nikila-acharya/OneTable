@@ -6,6 +6,7 @@ import { createFetcher } from "@/lib/intake/fetcher";
 import { importRecipeFromUrl } from "@/lib/recipes/import";
 import { openRouterClient } from "@/lib/recipes/openrouter-client";
 import { DEFAULT_PARSER_MODEL } from "@/lib/recipes/llm-parser";
+import { serverError } from "../../../../lib/api/errors";
 
 export async function POST(req: Request) {
   let body: { url?: unknown };
@@ -26,6 +27,6 @@ export async function POST(req: Request) {
     return NextResponse.json(result, { status: result.status === "ready" || result.status === "needs_review" ? 201 : 200 });
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/recipes/import", e);
   }
 }

@@ -11,6 +11,7 @@ import { getDb } from "@/lib/db";
 import { addLinks, listSources } from "@/lib/sources/service";
 import { getBoss } from "@/lib/intake/boss";
 import { enqueueImport } from "@/lib/intake/jobs";
+import { serverError } from "../../../lib/api/errors";
 
 export async function GET() {
   try {
@@ -18,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ sources: await listSources(getDb(), householdId) });
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/sources", e);
   }
 }
 
@@ -58,6 +59,6 @@ export async function POST(req: Request) {
     );
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/sources", e);
   }
 }

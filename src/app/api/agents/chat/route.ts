@@ -20,6 +20,7 @@ import {
   saveApproval,
   startRun,
 } from "@/lib/agents/persistence";
+import { serverError } from "../../../../lib/api/errors";
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -96,6 +97,6 @@ export async function POST(req: Request) {
     if (e instanceof AuthenticationError) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/agents/chat", e);
   }
 }

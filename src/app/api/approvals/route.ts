@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { AuthenticationError, requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { listApprovals, type ApprovalView } from "@/lib/agents/persistence";
+import { serverError } from "../../../lib/api/errors";
 
 const STATUSES: ApprovalView["status"][] = ["pending", "approved", "declined", "expired"];
 
@@ -22,6 +23,6 @@ export async function GET(req: Request) {
     if (e instanceof AuthenticationError) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/approvals", e);
   }
 }

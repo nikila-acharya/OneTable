@@ -157,6 +157,26 @@ describe.skipIf(!hasDb)("WP-1.6 onboarding completion (live DB)", () => {
     expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(0);
   });
 
+  it("an unknown consent key is rejected with an issue, not a database error", async () => {
+    // The bug this guards: keys are UI vocabulary, and 'allergens' /
+    // 'health_conditions' are the BACKEND enum names. They used to reach
+    // mapConsentType(), return undefined, and be written as DEFAULT, so
+    // Postgres raised a not-null violation and the route answered 500 for what
+    // was a bad request. Must now be a normal rejection with nothing written.
+    const hid = await newHousehold("free");
+    const d = draft({}, [adult("Dana")]);
+    d.consent = { allergens: { granted: true, at: NOW.toISOString(), policyVersion: "2026-10-16" } } as never;
+    const err = await completeOnboarding(db, hid, d, NOW).then(() => null, (e) => e);
+    expect(err).toBeInstanceOf(OnboardingRejectedError);
+    const text = (err as OnboardingRejectedError).issues.join(" ");
+    expect(text).toContain("allergens");
+    expect(text).toContain("not a recognised data type");
+    // Nothing committed: no members, and the household name is still the seed value.
+    expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(0);
+    const [hh] = await db.select().from(household).where(eq(household.id, hid));
+    expect(hh!.name).toBe("t");
+  });
+
   it("an under-13 weight is refused even with measurement consent", async () => {
     const hid = await newHousehold("household");
     const child = adult("Kid", { birthYear: 2018, birthMonth: 1, weightKg: "20", heightCm: "110" });
