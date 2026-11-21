@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireUser, AuthenticationError } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getOnboardingSummary } from "@/lib/onboarding/summary";
+import { serverError } from "../../../../lib/api/errors";
 
 export async function GET() {
   try {
@@ -10,6 +11,6 @@ export async function GET() {
     return NextResponse.json(await getOnboardingSummary(getDb(), householdId));
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/onboarding/summary", e);
   }
 }

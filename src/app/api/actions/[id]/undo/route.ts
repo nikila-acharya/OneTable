@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { AuthenticationError, requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { undoAction } from "@/lib/agents/persistence";
+import { serverError } from "../../../../../lib/api/errors";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -27,6 +28,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     if (e instanceof AuthenticationError) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/actions/[id]/undo", e);
   }
 }

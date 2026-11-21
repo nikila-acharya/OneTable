@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireUser, AuthenticationError } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ManualRecipeError, saveManualRecipe } from "@/lib/recipes/manual";
+import { serverError } from "../../../../lib/api/errors";
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -25,6 +26,6 @@ export async function POST(req: Request) {
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     if (e instanceof ManualRecipeError) return NextResponse.json({ error: e.code, reasons: e.reasons }, { status: 422 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/recipes/manual", e);
   }
 }

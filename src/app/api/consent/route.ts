@@ -11,11 +11,12 @@ import { grantConsent, withdrawConsent } from "@/lib/consent/service";
 import { effectiveStates } from "@/lib/consent/store";
 import { isConsentDataType } from "@/lib/consent/types";
 import { currentPolicyVersion } from "@/lib/consent/policy";
+import { serverError } from "../../../lib/api/errors";
 
 
 function errorResponse(e: unknown) {
   if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  return NextResponse.json({ error: "server_error" }, { status: 500 });
+  return serverError("api/consent", e);
 }
 
 export async function GET() {

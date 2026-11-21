@@ -8,6 +8,7 @@ import { requireUser, AuthenticationError } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { completeOnboarding, OnboardingRejectedError } from "@/lib/onboarding/complete";
 import type { OnboardingDraft } from "@/app/onboarding/store";
+import { serverError } from "../../../../lib/api/errors";
 
 function looksLikeDraft(b: unknown): b is OnboardingDraft {
   if (typeof b !== "object" || b === null) return false;
@@ -30,6 +31,6 @@ export async function POST(req: Request) {
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     if (e instanceof OnboardingRejectedError) return NextResponse.json({ error: e.code, issues: e.issues }, { status: 422 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/onboarding/complete", e);
   }
 }

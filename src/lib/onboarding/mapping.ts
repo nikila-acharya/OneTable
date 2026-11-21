@@ -32,5 +32,13 @@ export function mapConsentType(ui: ConsentType): ConsentDataType {
     case "allergies": return "allergies";
     case "conditions": return "health_conditions";
     case "measurements": return "body_measurements";
+    default:
+      // Unreachable for drafts that passed completeOnboarding's validation, and
+      // deliberately loud if that ever stops being true. Returning undefined was
+      // the original shape: TypeScript accepted it because the switch looked
+      // exhaustive, but the value came from the network, and drizzle writes
+      // DEFAULT for undefined fields - which Postgres rejects as a not-null
+      // violation and the route reported as an opaque 500.
+      throw new Error(`unknown consent data type: ${String(ui)}`);
   }
 }

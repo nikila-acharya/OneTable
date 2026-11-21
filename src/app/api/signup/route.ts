@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { signUpHousehold, EmailTakenError, SignupRejectedError } from "@/lib/signup/service";
+import { serverError } from "../../../lib/api/errors";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -20,6 +21,6 @@ export async function POST(req: Request) {
   } catch (e) {
     if (e instanceof SignupRejectedError) return NextResponse.json({ error: e.code, issues: e.issues }, { status: 422 });
     if (e instanceof EmailTakenError) return NextResponse.json({ error: e.code }, { status: 409 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/signup", e);
   }
 }

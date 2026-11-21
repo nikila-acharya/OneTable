@@ -15,6 +15,7 @@ import { eq } from "drizzle-orm";
 import { household, member } from "../../../db/schema";
 import type { Db } from "../db";
 import type { OnboardingDraft, MemberDraft, MemberMeals } from "../../app/onboarding/store";
+import { CONSENT_TYPES } from "../../app/onboarding/store";
 import { ALLERGENS, CONDITIONS } from "../health/enums";
 import { validateProfile } from "../members/validation";
 import { createMember, setAttendance, updateMember, type AttendanceEntry } from "../members/service";
@@ -71,11 +72,23 @@ export async function completeOnboarding(
   const settingsCheck = validateSettings(settingsInput);
   if (!settingsCheck.ok) issues.push(...settingsCheck.issues);
 
-  const consentGranted = new Set(
-    (Object.entries(draft.consent) as [ConsentTypeUi, { granted: boolean }][])
-      .filter(([, g]) => g.granted)
-      .map(([k]) => k),
+  // Consent keys are UI vocabulary arriving off the wire as `unknown`. An
+  // unrecognised one used to reach mapConsentType(), which had no default
+  // branch, so it returned undefined; drizzle faithfully wrote DEFAULT for an
+  // undefined field and Postgres rejected the not-null column - an opaque 500
+  // for what is really a bad request. Report it here, in the same pass as every
+  // other input, so nothing is written.
+  for (const key of Object.keys(draft.consent ?? {})) {
+    if (!(CONSENT_TYPES as readonly string[]).includes(key))
+      issues.push(
+        `consent "${key}" is not a recognised data type (use ${CONSENT_TYPES.join(", ")})`,
+      );
+  }
+
+  const grantedEntries = (Object.entries(draft.consent) as [ConsentTypeUi, { granted: boolean }][]).filter(
+    ([k, g]) => g.granted && (CONSENT_TYPES as readonly string[]).includes(k),
   );
+  const consentGranted = new Set<string>(grantedEntries.map(([k]) => k));
 
   const plans = draft.members.map((m) => {
     const profile = validateProfile(

@@ -4,6 +4,7 @@ import { requireUser, AuthenticationError } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getRecipeDetail } from "@/lib/recipes/detail";
 import { RecipeNotFoundError } from "@/lib/recipes/review";
+import { serverError } from "../../../../lib/api/errors";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,6 +17,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   } catch (e) {
     if (e instanceof AuthenticationError) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     if (e instanceof RecipeNotFoundError) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/recipes/[id]", e);
   }
 }

@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { AuthenticationError, requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { listActions, type ActionView } from "@/lib/agents/persistence";
+import { serverError } from "../../../lib/api/errors";
 
 const LEVELS: ActionView["level"][] = ["R", "A", "P", "X"];
 
@@ -32,6 +33,6 @@ export async function GET(req: Request) {
     if (e instanceof AuthenticationError) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return serverError("api/actions", e);
   }
 }

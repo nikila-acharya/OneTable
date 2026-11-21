@@ -34,7 +34,11 @@ export const STEP_LABELS: Record<OnboardStep, string> = {
 
 /* ------------------------------- consent (PV01) ------------------------------- */
 
-export type ConsentType = "allergies" | "conditions" | "measurements";
+// Runtime list first, type derived from it: an earlier version kept the union
+// and any validation list separate, so a new consent type could be added to the
+// type without anything at runtime knowing it.
+export const CONSENT_TYPES = ["allergies", "conditions", "measurements"] as const;
+export type ConsentType = (typeof CONSENT_TYPES)[number];
 
 export type ConsentGrant = {
   granted: boolean;
