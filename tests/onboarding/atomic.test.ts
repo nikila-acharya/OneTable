@@ -70,4 +70,23 @@ describe.skipIf(!hasDb)("WP-1.6 atomic onboarding write (live DB)", () => {
     expect(res).toEqual({ members: 1, consents: 1 });
     expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(1);
   });
+
+  it("the matched-member update is atomic too: a later failure reverts it", async () => {
+    // Idempotent re-runs go through updateMember, which opens its own nested
+    // transaction (a savepoint). This asserts that savepoint is bound to the
+    // outer transaction: if it were not, a failure in the health write would
+    // leave an edited profile and an extra consent row committed behind it.
+    const hid = await newHousehold();
+    await completeOnboarding(db, hid, draftWithHealth(), NOW);
+
+    const again = draftWithHealth();
+    again.members[0]!.dietaryPattern = "vegan"; // would change diet_pattern if committed
+    inject.failNextHealthWrite = true;
+    await expect(completeOnboarding(db, hid, again, NOW)).rejects.toThrow("injected failure");
+
+    const rows = await db.select().from(member).where(eq(member.householdId, hid));
+    expect(rows).toHaveLength(1); // still not duplicated
+    expect(rows[0]!.dietPattern).toBe("omnivore"); // the update rolled back
+    expect(await db.select().from(consent).where(eq(consent.householdId, hid))).toHaveLength(1);
+  });
 });

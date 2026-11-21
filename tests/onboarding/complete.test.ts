@@ -93,6 +93,42 @@ describe.skipIf(!hasDb)("WP-1.6 onboarding completion (live DB)", () => {
     expect(await db.select().from(member).where(eq(member.householdId, hid))).toHaveLength(0);
   });
 
+  it("running completion twice leaves one member, not two", async () => {
+    // Regression: members were inserted unconditionally, so a household that
+    // re-completed ended up with a duplicate of every profile and planned meals
+    // for twice as many people as it has.
+    const hid = await newHousehold("free");
+    const d = draft({}, [adult("Dana")]);
+    expect(await completeOnboarding(db, hid, d, NOW)).toEqual({ members: 1, consents: 0 });
+    expect(await completeOnboarding(db, hid, d, NOW)).toEqual({ members: 1, consents: 0 });
+    const rows = await db.select().from(member).where(eq(member.householdId, hid));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("a re-run with edited details updates the row it matched", async () => {
+    const hid = await newHousehold("free");
+    // The draft field is dietaryPattern; dietPattern is the DB column name.
+    await completeOnboarding(db, hid, draft({}, [adult("Dana", { dietaryPattern: "omnivore" })]), NOW);
+    await completeOnboarding(db, hid, draft({}, [adult("Dana", { dietaryPattern: "vegetarian" })]), NOW);
+    const rows = await db.select().from(member).where(eq(member.householdId, hid));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.dietPattern).toBe("vegetarian");
+  });
+
+  it("two genuine twins still get two rows, and a re-run keeps it at two", async () => {
+    // Guards the multiset matching: each existing row may be claimed only once,
+    // so identical profiles do not collapse into a single member.
+    const hid = await newHousehold("free");
+    const d = draft({}, [adult("Alex"), adult("Alex")]);
+    expect(await completeOnboarding(db, hid, d, NOW)).toEqual({ members: 2, consents: 0 });
+    const rows = await db.select().from(member).where(eq(member.householdId, hid));
+    expect(rows).toHaveLength(2);
+    // Same draft again: still two, and both were updated rather than appended.
+    expect(await completeOnboarding(db, hid, d, NOW)).toEqual({ members: 2, consents: 0 });
+    const after = await db.select().from(member).where(eq(member.householdId, hid));
+    expect(after).toHaveLength(2);
+  });
+
   it("a free household can save a full family of 10 members", async () => {
     // AC01's free cap of 1 member is retired (ADR-117). This is the case that
     // used to dead-end at step 6 for exactly the household size PRD 3 targets.
