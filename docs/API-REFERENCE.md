@@ -8,7 +8,8 @@ route exposes them yet.
 
 ## Authentication
 
-Every route below except `GET /api/health` calls `requireUser()`
+Every route below except `GET /api/health` and `GET /api/monitoring/status`
+calls `requireUser()`
 (`src/lib/auth`), which resolves the session cookie to an `AuthContext`:
 
 ```ts
@@ -47,6 +48,55 @@ Unauthenticated liveness check. Runs `select 1` against Neon.
 Returns **503** `{ "status": "degraded", "db": "unreachable" }` when the database
 cannot be reached. The driver error is intentionally not echoed — it can contain
 the connection host and user.
+
+---
+
+## GET /api/monitoring/status
+
+Operational status for the operator, not for a household. Guarded by a shared
+secret instead of a session, so it works when no user is signed in:
+
+```
+x-monitoring-token: <MONITORING_TOKEN>
+```
+
+The comparison is exact and constant-time (SHA-256 of both sides, then
+`timingSafeEqual`), so a prefix of the token does not authenticate.
+
+| Case | Status | Body |
+| --- | --- | --- |
+| `MONITORING_TOKEN` unset in the environment | **501** | `{ "error": "monitoring_not_configured" }` |
+| Header missing or wrong | **401** | `{ "error": "unauthorized" }` |
+| Database reachable | **200** | `status: "ok"` |
+| Database unreachable | **503** | `status: "degraded"` |
+
+```json
+{
+  "status": "ok",
+  "generatedAt": "2026-11-20T18:04:12.921Z",
+  "scope": "instance",
+  "scopeNote": "Serverless: figures describe this instance since its last cold start, not the deployment.",
+  "uptimeSec": 41,
+  "checks": { "database": { "status": "ok", "latencyMs": 14 } },
+  "integrations": { "pagerduty": false, "datadog": false, "sentry": false },
+  "errorReporting": "not_implemented",
+  "persistedMetrics": false
+}
+```
+
+Read the two flags at the bottom as the honest state of M6, not as future work
+that is already done:
+
+- **`errorReporting: "not_implemented"`** — errors are logged per request (see
+  `serverError()` in `src/lib/api/errors.ts`) but nothing is collected.
+- **`persistedMetrics: false`** — nothing is stored across requests, so there is
+  no series, no history and no alerting. `integrations` reports presence only.
+
+No household, member, user or health field appears in this response, and the
+token itself is never echoed. `src/lib/monitoring.ts` is deliberately not used
+here: its dashboard numbers are in-memory arrays that read healthy on every cold
+start, and its Sentry call posts to a placeholder URL. See
+`src/app/api/monitoring/status/route.ts`.
 
 ---
 
