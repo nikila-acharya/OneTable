@@ -116,13 +116,15 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     const m = await newMember(hh, { name: "Adult", birthYm: "1985-04" });
     const id = await newRecipe(hh, { title: "Chana Masala", kcal: 380, tags: ["gluten"] });
 
-    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "unspecified" }]);
+    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     // Asserted by id rather than as an exact array: other suites legitimately
     // leave starter-library rows (household_id IS NULL) in this database, and
     // those belong in every pool by design.
     const found = out.recipes.find((x) => x.id === id);
     expect(found).toBeDefined();
-    expect(found!.allergens).toEqual(["gluten"]);
+    // Normalised on the way out: stored tag "gluten" becomes the canonical
+    // enum value "wheat", which is what member allergies are expressed in.
+    expect(found!.allergens).toEqual(["wheat"]);
     expect(found!.caloriesPerServing).toBe(380);
     // a recipe with a source_url belongs to the household's own sources
     expect(found!.isOwnSource).toBe(true);
@@ -134,14 +136,14 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     const risky = await newRecipe(hh, { title: "Satay", kcal: 500, tags: ["peanut"] });
     const safe = await newRecipe(hh, { title: "Dal", kcal: 350, tags: [] });
 
-    const blocked = await loadRecipePool(db, hh, [{ id: m, allergens: ["peanut"], diet: "unspecified" }]);
+    const blocked = await loadRecipePool(db, hh, [{ id: m, allergens: ["peanuts"], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     const blockedIds = blocked.recipes.map((r) => r.id);
     expect(blockedIds).not.toContain(risky);
     expect(blockedIds).toContain(safe);
     expect(blocked.excluded.find((e) => e.title === "Satay")?.reasons).toContain("allergen_unconfirmed");
 
     await db.insert(allergenConfirmation).values({ recipeId: risky, memberId: m });
-    const after = await loadRecipePool(db, hh, [{ id: m, allergens: ["peanut"], diet: "unspecified" }]);
+    const after = await loadRecipePool(db, hh, [{ id: m, allergens: ["peanuts"], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     const afterIds = after.recipes.map((r) => r.id);
     expect(afterIds).toContain(risky);
     expect(afterIds).toContain(safe);
@@ -154,7 +156,7 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     const unreviewed = await newRecipe(hh, { title: "Unreviewed", kcal: 300, status: "needs_review" });
     const noNutrition = await newRecipe(hh, { title: "NoNutrition", tags: [] });
 
-    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "unspecified" }]);
+    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     const ids = out.recipes.map((r) => r.id);
     // Absence of my three, rather than an empty pool: starter rows from other
     // suites legitimately appear here.
@@ -173,8 +175,62 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     const m = await newMember(hh, { name: "M", birthYm: "1988-02" });
     const starter = await newRecipe(null, { title: "Starter Rice", kcal: 400, starter: true });
 
-    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "unspecified" }]);
+    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     expect(out.recipes.map((r) => r.id)).toContain(starter);
+  });
+
+  it("excludes a milk-allergic member from a recipe tagged 'dairy' (cross-vocabulary)", { timeout: 30000 }, async () => {
+    // The exact miss this fix exists for: members declare canonical enum values
+    // ("milk"), recipe tags arrive in scout's vocabulary ("dairy"), and the old
+    // verbatim comparison matched nothing, so cheese would have been planned.
+    const hh = await newHousehold("vocab-milk");
+    const m = await newMember(hh, { name: "M", birthYm: "1985-01", allergens: ["milk"] });
+    const paneer = await newRecipe(hh, { title: "Palak Paneer", kcal: 420, tags: ["dairy"] });
+    const dal = await newRecipe(hh, { title: "Dal", kcal: 350, tags: [] });
+
+    const out = await loadRecipePool(db, hh, [
+      { id: m, allergens: ["milk"], otherAllergens: [], conditions: [], diet: "unspecified" },
+    ]);
+    const ids = out.recipes.map((r) => r.id);
+    expect(ids).not.toContain(paneer);
+    expect(ids).toContain(dal);
+    // and the planner is handed canonical values on both sides of its own check
+    expect(out.recipes.every((r) => r.allergens.every((a) => ["milk", "wheat", "egg", "soy", "fish", "sesame", "peanuts", "tree nuts", "crustacean shellfish"].includes(a)))).toBe(true);
+  });
+
+  it("treats celiac as a hard gluten filter, not an advice flag", { timeout: 30000 }, async () => {
+    const hh = await newHousehold("vocab-celiac");
+    const m = await newMember(hh, { name: "C", birthYm: "1990-05" });
+    await db
+      .update(memberHealth)
+      .set({ dataEnc: encryptHealth({ heightCm: null, weightKg: null, conditions: ["celiac disease"], allergies: [], otherAllergens: [] }) })
+      .where(eq(memberHealth.memberId, m));
+    const roti = await newRecipe(hh, { title: "Aloo Paratha", kcal: 480, tags: ["gluten"] });
+    const rice = await newRecipe(hh, { title: "Curd Rice", kcal: 390, tags: [] });
+
+    const out = await loadRecipePool(db, hh, [
+      { id: m, allergens: [], otherAllergens: [], conditions: ["celiac disease"], diet: "unspecified" },
+    ]);
+    const ids = out.recipes.map((r) => r.id);
+    expect(ids).not.toContain(roti);
+    expect(ids).toContain(rice);
+  });
+
+  it("honours a free-text otherAllergen that no enum can express", { timeout: 30000 }, async () => {
+    const hh = await newHousehold("vocab-other");
+    const m = await newMember(hh, { name: "O", birthYm: "1988-08" });
+    const okra = await newRecipe(hh, { title: "Bhindi Masala", kcal: 330, tags: [] });
+    await db
+      .insert(recipeIngredient)
+      .values({ recipeId: okra, position: 1, rawText: "250 g fresh okra, sliced", food: "okra", uncertainAllergenTags: [] });
+    const aloo = await newRecipe(hh, { title: "Aloo Gobi", kcal: 310, tags: [] });
+
+    const out = await loadRecipePool(db, hh, [
+      { id: m, allergens: [], otherAllergens: ["okra"], conditions: [], diet: "unspecified" },
+    ]);
+    const ids = out.recipes.map((r) => r.id);
+    expect(ids).not.toContain(okra);
+    expect(ids).toContain(aloo);
   });
 
   it("refuses to plan for a vegetarian household rather than guessing from ingredient text", { timeout: 30000 }, async () => {
@@ -182,7 +238,7 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     const m = await newMember(hh, { name: "Veg", birthYm: "1995-06", diet: "vegetarian" });
     await newRecipe(hh, { title: "Paneer", kcal: 450, tags: [] });
 
-    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "vegetarian" }]);
+    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "vegetarian" }]);
     expect(out.recipes).toHaveLength(0);
     expect(out.blockedOn).toBe("diet_provenance_unavailable");
   });
@@ -259,8 +315,8 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
       await newRecipe(hh, { title: t, kcal, tags: [] });
     }
 
-    const a = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "unspecified" }]);
-    const b = await loadRecipePool(db, hh, [{ id: m, allergens: [], diet: "unspecified" }]);
+    const a = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
+    const b = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     // The planner indexes into this array with the seeded RNG, so an unordered
     // read (Postgres guarantees none) would silently change a household's week
     // between two identical calls.
@@ -310,7 +366,7 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     theirsRecipe = await newRecipe(theirs, { title: "Not Yours", kcal: 400, tags: [] });
     // A real member id: the loader queries allergen_confirmation by member, and
     // passing a placeholder string makes Postgres reject the uuid comparison.
-    const out = await loadRecipePool(db, mine, [{ id: mineMember, allergens: [], diet: "unspecified" }]);
+    const out = await loadRecipePool(db, mine, [{ id: mineMember, allergens: [], otherAllergens: [], conditions: [], diet: "unspecified" }]);
     expect(out.recipes.map((r) => r.id)).not.toContain(theirsRecipe);
   });
 });

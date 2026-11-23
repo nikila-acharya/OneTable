@@ -23,6 +23,7 @@ import { member, plan, planSlot, slotMember } from "../../../db/schema";
 
 type MemberRow = typeof member.$inferSelect;
 import { readHealth } from "../health/service";
+import { toAllergens } from "../health/allergen-vocabulary";
 import { MealPlannerAgent, type MemberProfile } from "../../agent/meal-planner";
 import type { Db } from "../db";
 import { loadRecipePool, type ExcludeReason } from "./pool";
@@ -128,10 +129,15 @@ export async function generateWeekPlan(
   }
 
   const profiles: MemberProfile[] = [];
-  const poolMembers: { id: string; allergens: string[]; diet: string }[] = [];
+  const poolMembers: { id: string; allergens: string[]; otherAllergens: string[]; conditions: string[]; diet: string }[] = [];
   for (const m of members) {
     const health = await readHealth(db, householdId, m.id);
-    const allergens = [...(health.allergies ?? []), ...(health.otherAllergens ?? [])];
+    // Enum allergies are normalised to the canonical vocabulary; otherAllergens
+    // is deliberately kept as free text because a user can name anything there
+    // ("okra", "figs") and it must still exclude a recipe that lists it.
+    const canonical = toAllergens(health.allergies ?? []);
+    const other = (health.otherAllergens ?? []).map((s) => String(s).trim()).filter(Boolean);
+    const allergens = [...canonical, ...other];
     const activity = ACTIVITY_MAP[m.activityLevel] ?? "moderate";
     profiles.push({
       memberId: m.id,
@@ -142,7 +148,13 @@ export async function generateWeekPlan(
       conditions: health.conditions ?? [],
       dietPreferences: m.dietPattern === "unspecified" || m.dietPattern === "omnivore" ? [] : [m.dietPattern],
     });
-    poolMembers.push({ id: m.id, allergens, diet: m.dietPattern });
+    poolMembers.push({
+      id: m.id,
+      allergens: canonical,
+      otherAllergens: other,
+      conditions: health.conditions ?? [],
+      diet: m.dietPattern,
+    });
   }
 
   const pool = await loadRecipePool(db, householdId, poolMembers);
