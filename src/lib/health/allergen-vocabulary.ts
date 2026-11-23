@@ -143,3 +143,106 @@ export function householdAllergens(
     members.flatMap((m) => [...(m.allergens ?? []), ...conditionAllergens(m.conditions ?? [])]),
   );
 }
+
+/**
+ * Attribution: which allergens an ingredient line plausibly contains.
+ *
+ * This is the same keyword set `ScoutAgent.extractAllergenTags` uses, expressed
+ * once and in canonical values instead of `dairy`/`gluten`/`tree_nuts` strings,
+ * so the writer and the comparer cannot drift into the mismatch that made five
+ * SG-A cases silently match nothing (ADR-120). Scout still emits its own
+ * vocabulary; the follow-up is to make it call this and delete the duplicate.
+ *
+ * Deliberately conservative in one direction only: it errs toward OVER-flagging
+ * (a line mentioning "nut" flags tree nuts), because an over-flagged recipe is
+ * merely excluded from a pool, while an under-flagged one can be served to an
+ * allergic member. Ambiguous words are flagged rather than resolved.
+ */
+const INGREDIENT_KEYWORDS: ReadonlyArray<readonly [string, Allergen]> = [
+  ["peanut", "peanuts"], ["groundnut", "peanuts"], ["monkey nut", "peanuts"],
+  ["almond", "tree nuts"], ["walnut", "tree nuts"], ["cashew", "tree nuts"],
+  ["pistachio", "tree nuts"], ["pecan", "tree nuts"], ["hazelnut", "tree nuts"],
+  ["macadamia", "tree nuts"], ["brazil nut", "tree nuts"], ["pine nut", "tree nuts"],
+  ["chestnut", "tree nuts"], ["nut", "tree nuts"],
+  ["milk", "milk"], ["dairy", "milk"], ["cheese", "milk"], ["butter", "milk"],
+  ["cream", "milk"], ["yogurt", "milk"], ["yoghurt", "milk"], ["whey", "milk"],
+  ["casein", "milk"], ["lactose", "milk"], ["ghee", "milk"], ["paneer", "milk"],
+  ["khoya", "milk"], ["malai", "milk"],
+  ["egg", "egg"], ["mayonnaise", "egg"], ["meringue", "egg"],
+  ["wheat", "wheat"], ["gluten", "wheat"], ["atta", "wheat"], ["maida", "wheat"],
+  ["semolina", "wheat"], ["sooji", "wheat"], ["rusk", "wheat"], ["couscous", "wheat"],
+  ["barley", "wheat"], ["rye", "wheat"], ["spelt", "wheat"], ["kamut", "wheat"],
+  ["farro", "wheat"], ["malt", "wheat"], ["soy", "soy"], ["soya", "soy"],
+  ["tofu", "soy"], ["tempeh", "soy"], ["edamame", "soy"], ["miso", "soy"],
+  ["soybean", "soy"], ["tnr", "soy"],
+  ["sesame", "sesame"], ["tahini", "sesame"], ["til", "sesame"], ["beniseed", "sesame"],
+  ["fish", "fish"], ["salmon", "fish"], ["tuna", "fish"], ["cod", "fish"],
+  ["halibut", "fish"], ["sardine", "fish"], ["anchovy", "fish"], ["trout", "fish"],
+  ["mackerel", "fish"], ["haddock", "fish"], ["tilapia", "fish"], ["fish sauce", "fish"],
+  ["shrimp", "crustacean shellfish"], ["prawn", "crustacean shellfish"],
+  ["crab", "crustacean shellfish"], ["lobster", "crustacean shellfish"],
+  ["oyster", "crustacean shellfish"], ["clam", "crustacean shellfish"],
+  ["mussel", "crustacean shellfish"], ["scallop", "crustacean shellfish"],
+  ["surimi", "crustacean shellfish"], ["shellfish", "crustacean shellfish"],
+];
+
+/** Allergen tags for one ingredient line, canonical and sorted. */
+export function allergensFromIngredientLine(rawText: string): Allergen[] {
+  const t = rawText.toLowerCase();
+  const out = new Set<Allergen>();
+  for (const [needle, allergen] of INGREDIENT_KEYWORDS) if (t.includes(needle)) out.add(allergen);
+  return [...out].sort();
+}
+
+/** Diet categories a source asserts about its own recipe. */
+const ASSERTION_TAGS: Record<string, string> = {
+  vegetarian: "vegetarian",
+  vegan: "vegan",
+  "plant based": "vegan",
+  "plant-based": "vegan",
+  pescatarian: "pescatarian",
+  halal: "halal",
+  kosher: "kosher",
+};
+
+/**
+ * Only what the source declared (schema.org recipeCategory/keywords survive as
+ * ParsedFields.category). Never inferred from ingredient names: a recipe with no
+ * assertion gets no tag, and the pool then excludes it for a household that
+ * needs proof, which is the honest answer rather than a guessed one.
+ */
+export function dietTagsFromAssertions(...values: readonly (readonly string[] | undefined | null)[]): string[] {
+  const out = new Set<string>();
+  for (const list of values) {
+    for (const v of list ?? []) {
+      const k = String(v).trim().toLowerCase();
+      const tag = ASSERTION_TAGS[k];
+      if (tag) out.add(tag);
+    }
+  }
+  return [...out].sort();
+}
+
+/**
+ * Diets whose meaning is an ingredient exclusion we CAN check against the
+ * allergen tags, so they need no provenance assertion at all.
+ */
+export function dietExcludedAllergens(diet: string | null | undefined): Allergen[] {
+  switch (String(diet ?? "").trim().toLowerCase()) {
+    case "gluten_free":
+      return ["wheat"];
+    case "dairy_free":
+      return ["milk"];
+    default:
+      return [];
+  }
+}
+
+/** Diets that cannot be checked by exclusion and must be asserted by the source. */
+export const PROVENANCE_DIETS: ReadonlySet<string> = new Set([
+  "vegetarian",
+  "vegan",
+  "pescatarian",
+  "halal",
+  "kosher",
+]);

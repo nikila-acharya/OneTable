@@ -163,7 +163,7 @@ export async function generateWeekPlan(
     if (reason === "diet_provenance_unavailable") {
       throw new PlanError(
         "pool_blocked",
-        "stored recipes carry no diet provenance, so a vegetarian/vegan/pescatarian/halal/kosher household cannot be planned safely yet",
+        "no available recipe carries the diet assertion this household's members declared (vegetarian/vegan/pescatarian/halal/kosher), so planning would mean guessing about ingredients",
         { reason, members: poolMembers.map((m) => m.diet) },
       );
     }

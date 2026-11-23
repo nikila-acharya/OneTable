@@ -27,10 +27,19 @@ import {
 } from "../../../db/schema";
 import type { Db } from "../db";
 import type { Recipe } from "../planner";
-import { conditionAllergens, toAllergens } from "../health/allergen-vocabulary";
+import {
+  PROVENANCE_DIETS,
+  conditionAllergens,
+  dietExcludedAllergens,
+  toAllergens,
+} from "../health/allergen-vocabulary";
 
-/** Diets that need ingredient-level provenance we do not store yet. */
-const PROVENANCE_REQUIRED = new Set(["vegetarian", "vegan", "pescatarian", "halal", "kosher"]);
+/**
+ * `gluten_free` / `dairy_free` are handled as allergen exclusions (checked
+ * against tags); the rest must be ASSERTED by the source in `recipe.diet_tags`,
+ * because "vegetarian" cannot be derived by excluding a list of things - a
+ * vegetarian dish can contain any allergen.
+ */
 
 export type ExcludeReason =
   | "allergen"
@@ -132,14 +141,16 @@ export async function loadRecipePool(
   // PR03: allergen confirmations are written only from the UI.
   const confirmed = new Set(confirmationRows.map((c) => `${c.recipeId}|${c.memberId}`));
 
-  // Diet provenance is a household-level blocker, not a per-recipe one.
-  const needsProvenance = members.some((m) => PROVENANCE_REQUIRED.has(m.diet));
+  // Which diets must be asserted by the source for this household.
+  const provenance = [...new Set(members.filter((m) => PROVENANCE_DIETS.has(m.diet)).map((m) => m.diet))];
 
   // Pre-computed per member, in canonical space. Comparing recipe tags and
   // member allergies verbatim used to miss milk/dairy, egg/eggs, wheat/gluten
   // and "tree nuts"/"tree_nuts" - see src/lib/health/allergen-vocabulary.ts.
   const memberFilters = members.map((m) => ({
-    canonical: new Set<string>(toAllergens([...m.allergens, ...conditionAllergens(m.conditions)])),
+    canonical: new Set<string>(
+      toAllergens([...m.allergens, ...conditionAllergens(m.conditions), ...dietExcludedAllergens(m.diet)]),
+    ),
     freeText: m.otherAllergens.map((s) => s.trim().toLowerCase()).filter((s) => s.length > 1),
   }));
 
@@ -153,9 +164,14 @@ export async function loadRecipePool(
     const allergens = toAllergens(rawTags);
     const rawHay = ings.map((i) => i.rawText.toLowerCase()).join(" | ");
 
-    if (needsProvenance) {
-      note(r.title, "diet_provenance_unavailable");
-      continue;
+    if (provenance.length) {
+      // Per-recipe proof, not a household veto: a recipe the source labelled
+      // vegetarian is usable, one with no assertion simply is not.
+      const asserted = new Set(r.dietTags ?? []);
+      if (provenance.some((d) => !asserted.has(d))) {
+        note(r.title, "diet_provenance_unavailable");
+        continue;
+      }
     }
 
     const blocked = members.some((m, i) => {
