@@ -6,7 +6,7 @@
  * because writeHealth is consent-gated (PV01) and consent is not what these
  * tests are about; the shape stored is identical.
  */
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { openDb, type Db } from "../../db/index";
@@ -34,6 +34,12 @@ let theirsRecipe = "";
 let db: Db;
 beforeAll(() => {
   db = openDb().db;
+  // Health blobs need ENCRYPTION_KEY. CI's unit job sets only DATABASE_URL, so a
+  // test that stores one supplies its own throwaway key — the same convention as
+  // tests/health/service.test.ts, tests/consent/consent.test.ts and
+  // tests/household/settings.test.ts. Without this the suite passes locally
+  // (`.env.local` has the key) and fails in CI with "ENCRYPTION_KEY is not set".
+  if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
 });
 
 async function newHousehold(name: string) {
