@@ -4,7 +4,7 @@
  */
 
 import { MealPlannerAgent, type MemberProfile, type PlanRequest } from "./meal-planner";
-import { createPlan, lock, swap, regenerate, getLockedMeals, getOwnSourceMeals } from "@/lib/planner";
+import {createPlan, lock, swap, regenerate, getLockedMeals, getOwnSourceMeals, RECIPE_LIBRARY} from "@/lib/planner";
 
 const test = async () => {
   console.log("=== WP-4.5 MealPlanner Agent Test Suite ===\n");
@@ -29,6 +29,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -67,6 +69,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -114,6 +118,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -159,6 +165,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -205,6 +213,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -263,6 +273,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -315,6 +327,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -354,6 +368,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -407,6 +423,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1", "m2"],
       memberProfiles: profiles,
       startDate: "2026-11-03",
@@ -452,6 +470,8 @@ const test = async () => {
 
     const request: PlanRequest = {
       requestType: "plan",
+      // declared fixture pool: the planner no longer falls back to the mock library
+      pool: Object.values(RECIPE_LIBRARY),
       memberIds: ["m1"],
       memberProfiles: profiles,
       startDate: "2026-11-03",

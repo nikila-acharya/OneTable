@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { MealPlannerAgent, type MemberProfile, type PlanRequest } from "./meal-planner";
 import type { Recipe } from "@/lib/planner";
+import { RECIPE_LIBRARY } from "@/lib/planner";
 
 describe("MealPlannerAgent", () => {
   let agent: MealPlannerAgent;
@@ -31,6 +32,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -62,6 +65,8 @@ describe("MealPlannerAgent", () => {
 
       const baseRequest: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -99,6 +104,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -135,6 +142,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1", "m2"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -173,6 +182,8 @@ describe("MealPlannerAgent", () => {
 
       request = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -319,6 +330,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -349,6 +362,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -380,6 +395,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -417,6 +434,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -467,6 +486,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -496,6 +517,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -527,6 +550,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -557,6 +582,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -592,6 +619,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1"],
         memberProfiles: profiles,
         startDate: "2026-11-03",
@@ -627,6 +656,8 @@ describe("MealPlannerAgent", () => {
     it("handles empty member list gracefully", async () => {
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: [],
         memberProfiles: [],
         startDate: "2026-11-03",
@@ -663,6 +694,8 @@ describe("MealPlannerAgent", () => {
 
       const request: PlanRequest = {
         requestType: "plan",
+        // declared fixture pool: the planner no longer falls back to the mock library
+        pool: Object.values(RECIPE_LIBRARY),
         memberIds: ["m1", "m2"],
         memberProfiles: profiles,
         startDate: "2026-11-03",

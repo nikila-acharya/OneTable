@@ -24,6 +24,15 @@ export interface MealSlot {
 }
 
 export interface PlanOptions {
+  /**
+   * Candidate recipes, supplied by the caller. Required: this used to be
+   * implicit, and createPlan() silently drew from RECIPE_LIBRARY below, so a
+   * plan generated for a real household consisted of 16 hardcoded mock meals
+   * (chicken, salmon, apple pie) whose ids are not `recipe.id` values and can
+   * therefore never be persisted (plan_slot.shared_recipe_id FKs to recipe).
+   * The library is still exported, but only as a declared test fixture.
+   */
+  pool: Recipe[];
   seed: number;
   memberIds: string[];
   startDate: string; // YYYY-MM-DD
@@ -41,8 +50,9 @@ export interface MealPlan {
   createdAt: string;
 }
 
-// Mock recipe library for deterministic generation
-const RECIPE_LIBRARY: Record<string, Recipe> = {
+// Test fixture ONLY. Production planning must pass options.pool built from real
+// `recipe` rows (src/lib/planning/pool.ts); nothing reads this by default.
+export const RECIPE_LIBRARY: Record<string, Recipe> = {
   "recipe-001": {
     id: "recipe-001",
     name: "Oatmeal with Berries",
@@ -163,10 +173,20 @@ export function createPlan(options: PlanOptions): MealPlan {
   const meals: MealSlot[] = [];
   const planId = `plan-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-  // Available recipes filtered by allergens
-  const availableRecipes = Object.values(RECIPE_LIBRARY).filter((recipe) => {
+  // Available recipes filtered by allergens.
+  // NOTE: this is defence in depth, not the whole filter. The planner has never
+  // used options.dietPreferences (a vegetarian household would happily receive
+  // meat from a pool that contains it); hard filters on diet, cook time and
+  // uncertain allergens belong to the pool loader, which has the data for them.
+  if (!Array.isArray(options.pool) || options.pool.length === 0) {
+    throw new Error("createPlan requires a non-empty options.pool");
+  }
+  const availableRecipes = options.pool.filter((recipe) => {
     return !recipe.allergens.some((allergen) => options.allergens.includes(allergen));
   });
+  if (availableRecipes.length === 0) {
+    throw new Error("createPlan: every pooled recipe is excluded by the household allergens");
+  }
 
   // Breakfast options
   const breakfastOptions = availableRecipes.filter((r) => r.caloriesPerServing < 400);
@@ -177,6 +197,22 @@ export function createPlan(options: PlanOptions): MealPlan {
   // Dinner options (own-source required for some slots if option set)
   const dinnerOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 300);
   const ownSourceDinners = dinnerOptions.filter((r) => r.isOwnSource);
+
+  // rng.choice() on an empty array returns undefined, and the meal was then
+  // pushed with `recipe: undefined` — a TypeError several frames away (or, in
+  // the agent path, a "success" with a hole in the week). Say which band is
+  // short instead: this is the common case for a small household pool, e.g.
+  // four recipes where none lands in the 250-450 lunch band.
+  const emptyBands = [
+    ["breakfast", breakfastOptions.length],
+    ["lunch", lunchOptions.length],
+    ["dinner", dinnerOptions.length],
+  ].filter(([, n]) => n === 0).map(([n]) => n);
+  if (emptyBands.length) {
+    throw new Error(
+      `createPlan: no candidate recipe left for ${emptyBands.join(", ")} — the pool is too small or too uniform (pool=${options.pool.length}, available after allergens=${availableRecipes.length})`,
+    );
+  }
 
   // Generate meals for each day
   const startDate = new Date(options.startDate);

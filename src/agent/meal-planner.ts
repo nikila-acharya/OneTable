@@ -34,6 +34,9 @@ export interface MemberProfile {
 
 export interface PlanRequest {
   requestType: "plan";
+  /** Real candidate recipes. Without it nothing can be planned: the planner no
+   *  longer falls back to a mock library (see src/lib/planner/index.ts). */
+  pool: Recipe[];
   memberIds: string[];
   memberProfiles: MemberProfile[];
   startDate: string; // YYYY-MM-DD
@@ -89,7 +92,14 @@ export class MealPlannerAgent {
       );
 
       // Build plan options
+      if (!request.pool || request.pool.length === 0) {
+        // Refuse rather than invent: a plan from the fixture library would look
+        // plausible in the UI and could not be saved (mock ids fail the FK).
+        return { success: false, error: "No recipe pool provided" };
+      }
+
       const planOptions: PlanOptions = {
+        pool: request.pool,
         seed: request.seed,
         memberIds: request.memberIds,
         startDate: request.startDate,
