@@ -27,6 +27,7 @@ import {
 } from "../../../db/schema";
 import type { Db } from "../db";
 import type { Recipe } from "../planner";
+import { conditionAllergens, toAllergens } from "../health/allergen-vocabulary";
 
 /** Diets that need ingredient-level provenance we do not store yet. */
 const PROVENANCE_REQUIRED = new Set(["vegetarian", "vegan", "pescatarian", "halal", "kosher"]);
@@ -39,8 +40,13 @@ export type ExcludeReason =
 
 export interface PoolMember {
   id: string;
-  /** Union of `allergies` and `otherAllergens` from the decrypted health blob. */
+  /** Canonical `ALLERGENS` values from the decrypted health blob. */
   allergens: string[];
+  /** Free text by design (PRD lets a user name anything), so it cannot be
+   *  enum-matched: compared as a case-insensitive substring of the ingredient. */
+  otherAllergens: string[];
+  /** Conditions, because celiac is a hard gluten filter (SG01), not an advice flag. */
+  conditions: string[];
   diet: string;
 }
 
@@ -129,22 +135,35 @@ export async function loadRecipePool(
   // Diet provenance is a household-level blocker, not a per-recipe one.
   const needsProvenance = members.some((m) => PROVENANCE_REQUIRED.has(m.diet));
 
+  // Pre-computed per member, in canonical space. Comparing recipe tags and
+  // member allergies verbatim used to miss milk/dairy, egg/eggs, wheat/gluten
+  // and "tree nuts"/"tree_nuts" - see src/lib/health/allergen-vocabulary.ts.
+  const memberFilters = members.map((m) => ({
+    canonical: new Set<string>(toAllergens([...m.allergens, ...conditionAllergens(m.conditions)])),
+    freeText: m.otherAllergens.map((s) => s.trim().toLowerCase()).filter((s) => s.length > 1),
+  }));
+
   const recipes: Recipe[] = [];
   for (const r of rows) {
     const ings = ingredients.get(r.id) ?? [];
-    // Uncertain tags are treated as PRESENT: fail safe, not fail open.
-    const allergens = [...new Set(ings.flatMap((i) => i.tags).map((t) => t.toLowerCase()))];
+    // Uncertain tags are treated as PRESENT: fail safe, not fail open. Stored
+    // tags arrive in scout's vocabulary, so they are normalised here and the
+    // planner receives canonical values on both sides of its own check.
+    const rawTags = ings.flatMap((i) => i.tags);
+    const allergens = toAllergens(rawTags);
+    const rawHay = ings.map((i) => i.rawText.toLowerCase()).join(" | ");
 
     if (needsProvenance) {
       note(r.title, "diet_provenance_unavailable");
       continue;
     }
 
-    const blocked = members.some(
-      (m) =>
-        m.allergens.some((a) => allergens.includes(a.toLowerCase())) &&
-        !confirmed.has(`${r.id}|${m.id}`),
-    );
+    const blocked = members.some((m, i) => {
+      const f = memberFilters[i]!;
+      const enumHit = allergens.some((a) => f.canonical.has(a));
+      const freeTextHit = f.freeText.some((t) => rawHay.includes(t));
+      return (enumHit || freeTextHit) && !confirmed.has(`${r.id}|${m.id}`);
+    });
     if (blocked) {
       note(r.title, "allergen_unconfirmed");
       continue;
