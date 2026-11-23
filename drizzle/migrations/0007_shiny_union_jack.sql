@@ -1,0 +1,1 @@
+ALTER TABLE "recipe" ADD COLUMN "diet_tags" text[] DEFAULT ARRAY[]::text[] NOT NULL;

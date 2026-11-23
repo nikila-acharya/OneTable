@@ -6,8 +6,12 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  PROVENANCE_DIETS,
+  allergensFromIngredientLine,
   conditionAllergens,
   conflicts,
+  dietExcludedAllergens,
+  dietTagsFromAssertions,
   householdAllergens,
   toAllergen,
   toAllergens,
@@ -94,6 +98,78 @@ describe("conditionAllergens", () => {
     for (const c of ["type 2 diabetes", "chronic kidney disease", "pregnancy", "hypertension", "high cholesterol"]) {
       expect(conditionAllergens([c])).toEqual([]);
     }
+  });
+});
+
+describe("allergensFromIngredientLine (attribution)", () => {
+  it("flags Indian and generic spellings that a wheat/milk list would miss", () => {
+    expect(allergensFromIngredientLine("200 g paneer, cubed")).toContain("milk");
+    expect(allergensFromIngredientLine("2 tbsp ghee")).toContain("milk");
+    expect(allergensFromIngredientLine("1 cup atta")).toContain("wheat");
+    expect(allergensFromIngredientLine("sooji for the upma")).toContain("wheat");
+    expect(allergensFromIngredientLine("1 tbsp tahini")).toContain("sesame");
+    expect(allergensFromIngredientLine("30 ml fish sauce")).toContain("fish");
+    expect(allergensFromIngredientLine("200 g prawns")).toContain("crustacean shellfish");
+    expect(allergensFromIngredientLine("firm tofu, pressed")).toContain("soy");
+  });
+
+  it("returns sorted canonical values, empty for plain foods", () => {
+    expect(allergensFromIngredientLine("300 g spinach, washed")).toEqual([]);
+    expect(allergensFromIngredientLine("1 cup rice")).toEqual([]);
+    const out = allergensFromIngredientLine("cashew, peanut and sesame crunch");
+    expect(out).toEqual(["peanuts", "sesame", "tree nuts"]);
+  });
+
+  it("deliberately over-flags rather than under-flags", () => {
+    // "nut" inside a word flags tree nuts; a wrongly excluded recipe costs a
+    // candidate, a wrongly cleared recipe can hospitalise someone.
+    expect(allergensFromIngredientLine("coconut milk")).toEqual(["milk", "tree nuts"]);
+    expect(allergensFromIngredientLine("butternut squash")).toContain("milk"); // "butter"
+  });
+
+  it("every emitted value is a member-declarable allergen", () => {
+    for (const line of ["paneer", "tahini", "toor dal with soy", "prawn balachance"]) {
+      for (const a2 of allergensFromIngredientLine(line)) expect(ALLERGENS).toContain(a2 as never);
+    }
+  });
+});
+
+describe("dietTagsFromAssertions", () => {
+  it("records only what the source said about itself", () => {
+    expect(dietTagsFromAssertions(["Vegetarian"], [])).toEqual(["vegetarian"]);
+    expect(dietTagsFromAssertions(["vegan", "dinner"], undefined)).toEqual(["vegan"]);
+    expect(dietTagsFromAssertions(["plant-based"], null)).toEqual(["vegan"]);
+    expect(dietTagsFromAssertions(["gluten free"], ["Indian"])).toEqual([]);
+    // not an assertion: a cuisine or a course name says nothing about diet
+    expect(dietTagsFromAssertions(["Main Course"], ["Italian"])).toEqual([]);
+    expect(dietTagsFromAssertions(["halal"], ["kosher"])).toEqual(["halal", "kosher"]);
+  });
+
+  it("never infers vegetarian from ingredients", () => {
+    // If this ever changes, it becomes a hand-rolled meat detector - the thing
+    // ADR-120 rejects. An unasserted recipe must stay unproven.
+    expect(dietTagsFromAssertions([], ["1 cup rice, 1 tomato"])).toEqual([]);
+  });
+
+  it("lists the diets that need proof, and keeps exclusion-checkable diets out", () => {
+    expect([...PROVENANCE_DIETS].sort()).toEqual(["halal", "kosher", "pescatarian", "vegan", "vegetarian"]);
+    expect(PROVENANCE_DIETS.has("gluten_free" as never)).toBe(false);
+    expect(PROVENANCE_DIETS.has("omnivore" as never)).toBe(false);
+  });
+});
+
+describe("dietExcludedAllergens", () => {
+  it("handles the two diets that are really ingredient exclusions", () => {
+    expect(dietExcludedAllergens("gluten_free")).toEqual(["wheat"]);
+    expect(dietExcludedAllergens("dairy_free")).toEqual(["milk"]);
+    expect(dietExcludedAllergens("omnivore")).toEqual([]);
+    expect(dietExcludedAllergens("unspecified")).toEqual([]);
+    expect(dietExcludedAllergens(null)).toEqual([]);
+  });
+
+  it("makes a gluten_free household member exclude a 'gluten' tagged line", () => {
+    const tags = allergensFromIngredientLine("1 cup maida");
+    expect(conflicts(tags, dietExcludedAllergens("gluten_free"))).toBe(true);
   });
 });
 

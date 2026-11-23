@@ -7,6 +7,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { recipe, recipeIngredient, recipeStep } from "../../../db/schema";
 import type { Db } from "../db";
 import type { ParsedFields } from "./llm-parser";
+import { dietTagsFromAssertions } from "../health/allergen-vocabulary";
 
 export class RecipeNotFoundError extends Error {
   readonly code = "not_found" as const;
@@ -60,6 +61,10 @@ export async function saveParsedRecipe(db: Db, householdId: string, input: SaveP
         cookMin: input.fields.cookMinutes,
         totalMin: input.fields.totalMinutes,
         cuisine: input.fields.cuisine[0] ?? null,
+        // Only what the source asserted about itself (ADR-120). An empty array
+        // means unproven, which the planning pool treats as excluded for any
+        // member who declared a provenance diet - not as "probably fine".
+        dietTags: dietTagsFromAssertions(input.fields.category, input.fields.cuisine),
         parseMethod: input.parseMethod,
         status,
         unsureFields: input.unsure,

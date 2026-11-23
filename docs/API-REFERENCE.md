@@ -1,7 +1,9 @@
 # OneTable API Reference
 
-Documents the routes that exist in `src/app/**/route.ts`. Anything not listed here
-is not implemented — including `/api/analytics/*` and `/api/audit/*`, which were
+Documents the API surface. The **complete route index** further down is generated
+from `src/app/**/route.ts` and kept honest by `tests/unit/docs/route-index.test.ts`;
+the prose sections describe a subset in detail. Anything not in that index is not
+implemented — including `/api/analytics/*` and `/api/audit/*`, which were
 described in an earlier draft of this file but never built.
 
 The library modules behind those names (`src/lib/analytics.ts`,
@@ -40,6 +42,74 @@ Error responses use this shape (matching the existing M2 routes):
 | 500 | `server_error` |
 
 ---
+
+## Complete route index
+
+Every handler under `src/app/**/route.ts` (23 routes, generated from the tree;
+`tests/unit/docs/route-index.test.ts` fails if this list drifts). Prose sections
+below cover the ones an integrator is most likely to call; the rest are real
+routes whose contract is defined by their handler and tests.
+
+| Path | Methods | Documented below |
+| --- | --- | --- |
+| `/api/actions` | GET | yes |
+| `/api/actions/[id]/undo` | POST | yes |
+| `/api/agents/chat` | POST | yes |
+| `/api/approvals` | GET | yes |
+| `/api/approvals/[id]` | POST | yes |
+| `/api/auth/[...nextauth]` | (Auth.js catch-all) | no - owned by Auth.js |
+| `/api/consent` | GET, POST | no |
+| `/api/health` | GET | yes |
+| `/api/insights` | GET | yes |
+| `/api/monitoring/status` | GET | yes |
+| `/api/onboarding/complete` | POST | no |
+| `/api/onboarding/summary` | GET | no |
+| `/api/plans/first` | POST | yes |
+| `/api/recipes/[id]` | GET | no |
+| `/api/recipes/[id]/review` | GET, POST | no |
+| `/api/recipes/box` | GET | no |
+| `/api/recipes/import` | POST | no |
+| `/api/recipes/manual` | POST | no |
+| `/api/recipes/review` | GET | no |
+| `/api/signup` | POST | no |
+| `/api/sources` | GET, POST | no |
+| `/api/sources/[id]/website` | POST | no |
+| `/api/sources/import` | POST | yes |
+
+---
+
+## POST /api/sources/import
+
+Imports the household's **linked** sources in bulk. Optional body `{limit}`
+(clamped 1..5). Composes the single-link importer with the post-import
+enrichment, so it is the step that turns linked sites into planable recipes:
+
+```json
+{
+  "imported": [{ "url": "https://example.test/r", "status": "imported", "recipeId": "…",
+                 "parseMethod": "markup", "nutrition": "mapped",
+                 "allergenFlaggedLines": 2, "dietTags": ["vegetarian"] }],
+  "skipped": [{ "url": "http://localhost:5432/x", "status": "skipped",
+                "reason": "That link is not a public web page, so it was not fetched." }],
+  "alreadyImported": 1,
+  "remaining": 3,
+  "llmFallbackConfigured": true,
+  "nutritionConfigured": true,
+  "plannerReady": 1
+}
+```
+
+- **200** the run completed (individual URLs may be `skipped`, in plain words);
+  **401** no session; **409** `no_sources`.
+- At most 5 URLs per call, because the fetcher waits 1s between requests per
+  domain and honours `crawl-delay`; press again for the rest via `remaining`.
+- URLs already stored as recipes are skipped **without a network call**, so
+  repeating is cheap and cannot duplicate.
+- Each link is re-checked with `checkPublicUrl` at fetch time (SSRF defence in
+  depth, see ADR-121) and social hosts are never fetched (ADR-015).
+- `nutrition` is `"mapped"` | `"unavailable"` | `"skipped"`. `"skipped"` means no
+  `FDC_API_KEY`; such recipes stay excluded from planning as `no_nutrients`.
+  Nothing here estimates calories.
 
 ## POST /api/plans/first
 

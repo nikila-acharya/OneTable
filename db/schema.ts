@@ -762,6 +762,17 @@ export const recipe = pgTable(
 
       .default(sql`ARRAY[]::text[]`),
 
+    /**
+     * Suitability asserted by the source itself (schema.org recipeCategory /
+     * keywords carried through ParsedFields.category), NOT inferred by guessing
+     * from ingredient names. Empty means unproven, and the planning pool then
+     * excludes the recipe for any member who declared one of these diets —
+     * see ADR-120 for why guessing was rejected.
+     */
+    dietTags: text('diet_tags')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     parseMethod: parseMethod('parse_method').notNull().default('manual'),
 
     status: recipeStatus('status').notNull().default('ready'),
