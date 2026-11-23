@@ -41,6 +41,49 @@ Error responses use this shape (matching the existing M2 routes):
 
 ---
 
+## POST /api/plans/first
+
+Drafts the household's plan for the week containing today and persists it.
+Session required; **no request body at all** — household, members, health and
+candidate recipes are derived server-side, so a caller cannot name a household.
+
+Idempotent per week: a second press returns the existing plan with
+`created: false` and HTTP 200, not a second week.
+
+```json
+{
+  "created": true,
+  "planId": "6f0a…",
+  "weekStart": "2026-11-16",
+  "seed": 1830049772,
+  "slots": 21,
+  "status": "draft",
+  "meals": [{ "date": "2026-11-16", "mealType": "breakfast", "recipeId": "…", "recipeName": "…" }]
+}
+```
+
+| Case | Status | `error` |
+| --- | --- | --- |
+| Created | **201** | — |
+| This week already planned (nothing written) | **200** | — |
+| No session | **401** | `unauthenticated` |
+| Household has no members | **409** | `no_members` |
+| Nothing edible: no recipes, or every candidate excluded by an unconfirmed allergen, or no nutrition rollup | **409** | `no_recipes` |
+| Pool too small or too uniform for a meal band | **409** | `planner_refused` |
+| Household declares vegetarian / vegan / pescatarian / halal / kosher | **501** | `pool_blocked` |
+| Unexpected | **500** | `server_error` |
+
+The 501 is a deliberate capability gap, not a bug: stored recipes carry no diet
+provenance (`recipe` has no diet tags), and guessing suitability from ingredient
+strings is the hand-rolled word list the safety rules forbid. Refusing is the
+safe answer until intake records tags. See `docs/decisions/119-planner-uses-declared-recipe-pools.md`.
+
+`seed` is derived from `household id + week`, so a retry reproduces the same
+week; `plan_slot.shared_recipe_id` always references a real `recipe` row owned by
+the household or from the shared starter library.
+
+---
+
 ## GET /api/health
 
 Unauthenticated liveness check. Runs `select 1` against Neon.
