@@ -10,6 +10,7 @@ import { openDb, type Db } from "../../db/index";
 import { household, member, recipe, recipeIngredient, source } from "../../db/schema";
 import { eraseHousehold } from "../../src/lib/consent/erase";
 import { importLinkedSources, NoSourcesError } from "../../src/lib/intake/importSources";
+import { ensureStarterLibrary } from "../helpers/ensure-starter-library";
 import { loadRecipePool } from "../../src/lib/planning/pool";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
@@ -69,10 +70,15 @@ function makeFetch(seen: string[]) {
   }) as unknown as typeof fetch;
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   // Health blobs need a key and CI's unit job does not set one (repo convention).
   if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = randomBytes(32).toString("base64");
-  db = openDb().db;
+  const opened = openDb();
+  db = opened.db;
+  // ADR-123 dependency, declared rather than assumed: this file's vegetarian-member
+  // test expects the shared starter library to cover the household, and
+  // tests/db.test.ts truncates the whole recipe table whenever it runs first.
+  await ensureStarterLibrary(opened.sql as unknown as { unsafe: (s: string) => Promise<unknown> });
 });
 
 afterAll(async () => {
@@ -169,15 +175,22 @@ describe.skipIf(!hasDb)("importLinkedSources (live DB, no network)", () => {
       { id: m!.id, allergens: [], otherAllergens: [], conditions: [], diet: "vegetarian" },
     ]);
 
-    // Still nothing plannable, but for the truthful and narrower reason now:
-    // the asserted recipe is only missing nutrition, while the unasserted one is
-    // genuinely excluded on diet.
-    expect(pool.recipes).toHaveLength(0);
+    // Per-recipe reasons are the point, and they survive the library: the asserted
+    // recipe is excluded only for missing nutrition, the unasserted one on diet.
+    // isOwnSource distinguishes this household's rows from the shared library
+    // (starter rows have no sourceUrl and visibility 'starter'), and it is the
+    // honest way to express "neither imported recipe made the pool" - matching by
+    // title would be wrong, because the library ships its own Chana Masala.
+    expect(pool.recipes.filter((r) => r.isOwnSource)).toHaveLength(0);
     const paneerEntry = pool.excluded.find((e) => e.title === "Palak Paneer");
     const chanaEntry = pool.excluded.find((e) => e.title === "Chana Masala");
     expect(paneerEntry!.reasons).toEqual(["no_nutrients"]);
     expect(chanaEntry!.reasons).toContain("diet_provenance_unavailable");
-    expect(pool.blockedOn).not.toBeNull();
+    // And this changed with ADR-123, deliberately: the household is no longer
+    // blocked outright, because the shared starter library covers a vegetarian
+    // member. The two imported recipes are still excluded for their own reasons.
+    expect(pool.blockedOn).toBeNull();
+    expect(pool.recipes.length).toBeGreaterThan(0);
   });
 
   it("caps the run and reports what is left", { timeout: 30000 }, async () => {
