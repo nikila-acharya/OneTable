@@ -5,8 +5,9 @@
  * planned" chips that match the stored data exactly (§5.0 AC); the Sources
  * section shows the starter-library fallback (step 5 is WP-2.7, so
  * onboarding finishes with zero sources — §5.0 AC). "Plan our first week"
- * runs the progress stub and the approval-card preview; the real planner
- * lands in M3.
+ * runs the real pipeline: it saves the draft, imports the household's linked
+ * sources, then asks the server to draft the week and renders what came back
+ * (or the plain reason nothing was drafted).
  */
 
 "use client";
@@ -20,7 +21,7 @@ import {
   type OnboardStep,
   type OnboardingDraft,
 } from "../store";
-import { slotLabel, weeklyMealCount } from "./meals";
+import { slotLabel } from "./meals";
 import { activityLabel } from "./members";
 
 function nextMondayLabel(): string {
@@ -28,11 +29,6 @@ function nextMondayLabel(): string {
   const day = (d.getDay() + 6) % 7;
   d.setDate(d.getDate() + ((7 - day) % 7 || 7));
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return true;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function ReviewSection({
@@ -66,6 +62,60 @@ function KRow({ k, v }: { k: string; v: string }) {
   );
 }
 
+type PlanMeal = { date: string; mealType: string; recipeId: string; recipeName: string };
+type PlanView = {
+  created: boolean;
+  planId: string;
+  weekStart: string;
+  seed: number;
+  slots: number;
+  status: string;
+  meals: PlanMeal[];
+};
+type ImportResponse = {
+  imported: { url: string; status: string }[];
+  skipped: { url: string; status?: string; reason: string }[];
+  alreadyImported: number;
+  remaining: number;
+  nutritionConfigured: boolean;
+};
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
+  snack: "Snack",
+};
+
+/**
+ * Plain next steps for the reasons the server can actually return from
+ * /api/plans/first (ADR-119). An unknown code falls back to a generic line
+ * rather than promising something we have not established.
+ */
+const FAILURE_NEXT_STEP: Record<string, string> = {
+  no_recipes: "We have no recipes stored for your household yet. Link a few recipe pages and press again.",
+  pool_blocked:
+    "Someone in your household declared a diet we cannot prove for the recipes we hold, so nothing was guessed. Import recipes that state their diet.",
+  planner_refused:
+    "The recipes we hold are too few or too similar to fill every meal. Adding a couple more links usually fixes this.",
+  no_members: "Add the people you cook for first, then draft the week.",
+  save_rejected: "Fix the highlighted answers above and press again.",
+  unauthenticated: "Your session expired - sign in again and press the button.",
+};
+
+function planByDay(meals: PlanMeal[]): Record<string, PlanMeal[]> {
+  const by: Record<string, PlanMeal[]> = {};
+  for (const m of meals) (by[m.date] ||= []).push(m);
+  return Object.fromEntries(Object.entries(by).sort(([x], [y]) => (x < y ? -1 : 1)));
+}
+
+function dayLabel(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 export function Review({
   draft,
   update,
@@ -81,7 +131,6 @@ export function Review({
   goBack: () => void;
 }) {
   const h = draft.household;
-  const mealCount = weeklyMealCount(draft.meals);
 
   // Stored allergies -> review chips, one per distinct allergen, in stored order (§5.0 AC).
   const stored = allStoredAllergies(draft);
@@ -97,14 +146,25 @@ export function Review({
 
   const gatedCount = draft.members.filter(memberNeedsGeneralGuidance).length;
 
-  type Phase = "idle" | "progress" | "approval";
-  const [phase, setPhase] = useState<Phase>(draft.firstPlanRequestedAt ? "approval" : "idle");
-  const [visible, setVisible] = useState(draft.firstPlanRequestedAt ? 4 : 0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stages are driven by the actual requests, not by a timer. The stub that
+  // used to live here animated four reassuring lines ("Reading the starter
+  // library", "Planning 28 meals") and a "✓ Passed safety checks" card while
+  // making no request at all: the screen claimed work it had not done.
+  type Stage = "idle" | "saving" | "reading" | "planning" | "planned" | "failed";
+  const [stage, setStage] = useState<Stage>("idle");
+  const [busy, setBusy] = useState(false);
+  const [plan, setPlan] = useState<PlanView | null>(null);
+  const [failure, setFailure] = useState<{ code: string; message: string } | null>(null);
+  const [importNote, setImportNote] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // Resuming after a previous request must not create a second plan by itself.
+  const [resumed] = useState<boolean>(Boolean(draft.firstPlanRequestedAt));
 
   // WP-2.7: step 5 stores sources on the server; review reads them back
   // (never the draft) so the numbers match what is actually saved.
-  const [sourceCards, setSourceCards] = useState<{ url: string; creatorName: string | null; chip: { kind: string; text: string } }[]>([]);
+  const [sourceCards, setSourceCards] = useState<
+    { url: string; creatorName: string | null; chip: { kind: string; text: string } }[]
+  >([]);
   const sourcesLoaded = useRef(false);
   useEffect(() => {
     if (sourcesLoaded.current) return;
@@ -115,54 +175,88 @@ export function Review({
       .catch(() => {});
   }, []);
 
-  const lines = [
-    `Using ${sourceCards.length} source${sourceCards.length === 1 ? "" : "s"} · reading the starter library`,
-    "Checking allergies against every recipe",
-    `Planning ${mealCount || 28} meals (7 days × every slot)`,
-    "Making sure nobody gets a meal they can't eat",
-  ];
+  const STAGE_LABELS: Record<string, string> = {
+    saving: "Saving your answers",
+    reading: "Reading the recipe links you saved",
+    planning: "Drafting your week",
+  };
+  const STAGE_ORDER = ["saving", "reading", "planning"];
+  const stageIndex = STAGE_ORDER.indexOf(stage === "planned" || stage === "failed" ? "planning" : stage);
+  const doneStages = STAGE_ORDER.slice(0, Math.max(0, stageIndex));
 
-  useEffect(() => {
-    if (phase !== "progress") return;
-    const total = lines.length;
-    const finishPlan = () => {
-      setPhase("approval");
-      if (!draft.firstPlanRequestedAt) {
-        update({ ...draft, firstPlanRequestedAt: new Date().toISOString() });
+  async function postJson(path: string, body?: unknown): Promise<{ status: number; json: Record<string, unknown> | null }> {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    let json: Record<string, unknown> | null = null;
+    try {
+      json = (await res.json()) as Record<string, unknown>;
+    } catch {
+      json = null;
+    }
+    return { status: res.status, json };
+  }
+
+  const runPlan = async (): Promise<void> => {
+    setBusy(true);
+    setFailure(null);
+    setImportNote(null);
+    try {
+      setStage("saving");
+      if (submitDraft) {
+        const res = await submitDraft();
+        if (!res.ok) {
+          setSubmitError(res.message);
+          setStage("failed");
+          setFailure({ code: "save_rejected", message: res.message });
+          return;
+        }
       }
-    };
-    if (prefersReducedMotion()) {
-      // Resolve without animation (§16.6); async so nothing cascades the render.
-      const t = setTimeout(() => {
-        setVisible(total);
-        finishPlan();
-      }, 0);
-      return () => clearTimeout(t);
-    }
-    if (visible >= total) {
-      const t = setTimeout(finishPlan, 200);
-      return () => clearTimeout(t);
-    }
-    timer.current = setTimeout(() => setVisible((v) => v + 1), 550);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, visible]);
+      setSubmitError(null);
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
+      if (sourceCards.length > 0) {
+        setStage("reading");
+        const imp = await postJson("/api/sources/import");
+        if (imp.status === 200 && imp.json) {
+          const j = imp.json as unknown as ImportResponse;
+          const totalLinks = j.imported.length + j.skipped.length + j.alreadyImported;
+          const bits: string[] = [];
+          bits.push(`${j.imported.length} of ${totalLinks} link${totalLinks === 1 ? "" : "s"} read`);
+          if (j.alreadyImported) bits.push(`${j.alreadyImported} already in your library`);
+          if (j.skipped.length) bits.push(`${j.skipped.length} skipped (${j.skipped[0]!.reason.replace(/\.$/, "").toLowerCase()})`);
+          if (j.remaining) bits.push(`${j.remaining} still waiting - press again for the rest`);
+          if (!j.nutritionConfigured) bits.push("no nutrition service configured, so new recipes cannot be planned yet");
+          setImportNote(bits.join(" · "));
+        } else if (imp.status === 409) {
+          setImportNote("Nothing linked to read yet, so planning uses the recipes you already have.");
+        } else {
+          setImportNote("Your saved links could not be read this time, so planning used what is already stored.");
+        }
+      }
 
-  const startPlan = async () => {
-    if (submitDraft) {
-      const res = await submitDraft();
-      if (!res.ok) {
-        setSubmitError(res.message);
+      setStage("planning");
+      const p = await postJson("/api/plans/first");
+      if (p.status === 200 || p.status === 201) {
+        const j = p.json as unknown as PlanView;
+        setPlan(j);
+        setStage("planned");
+        if (!draft.firstPlanRequestedAt) {
+          update({ ...draft, firstPlanRequestedAt: new Date().toISOString() });
+        }
         return;
       }
+      const j = (p.json ?? {}) as { error?: string; message?: string };
+      setStage("failed");
+      setFailure({ code: j.error ?? `http_${p.status}`, message: j.message ?? "We could not draft the week just now." });
+    } finally {
+      setBusy(false);
     }
-    setSubmitError(null);
-    setVisible(0);
-    setPhase("progress");
+  };
+
+  const startPlan = async () => {
+    await runPlan();
   };
 
   const memberLine = (i: number) => {
@@ -246,50 +340,89 @@ export function Review({
             {submitError}
           </p>
         ) : null}
-        <OtButton full onClick={() => void startPlan()} disabled={phase === "progress"}>
-          Plan our first week
+        <OtButton full onClick={() => void startPlan()} disabled={busy}>
+          {plan ? "Draft the week again" : "Plan our first week"}
         </OtButton>
         <div className="ot-navrow">
           <OtButton kind="ghost" onClick={goBack}>‹ Back</OtButton>
         </div>
       </div>
 
-      {phase !== "idle" && (
-        <div className="ot-prog" aria-label="First plan progress">
-          <h2>Your first week</h2>
-          {lines.map((l, i) => (
-            <div
-              key={l}
-              className={`ot-prog-line${i < visible ? " ot-prog-line--done" : i === visible ? " ot-prog-line--now" : ""}`}
-            >
-              <span className="tick" aria-hidden="true">✓</span>
-              <span>{l}</span>
-            </div>
-          ))}
+      {resumed && !plan && stage === "idle" ? (
+        <p className="ot-meta" style={{ marginTop: 10 }}>
+          You already asked for a draft week once. Press the button to fetch it again -
+          this does not create a second plan for the same week.
+        </p>
+      ) : null}
+
+      {busy ? (
+        <div className="ot-prog" aria-label="First plan progress" role="status">
+          <h2>Working on your first week</h2>
+          {STAGE_ORDER.map((k) => {
+            const done = doneStages.includes(k);
+            const current = stage === k;
+            return (
+              <div
+                key={k}
+                className={`ot-prog-line${done ? " ot-prog-line--done" : current ? " ot-prog-line--now" : ""}`}
+              >
+                <span className="tick" aria-hidden="true">{done || current ? "✓" : "·"}</span>
+                <span>{STAGE_LABELS[k]}</span>
+              </div>
+            );
+          })}
           <div className="ot-prog-bar" role="presentation">
-            <i style={{ width: `${Math.round((visible / lines.length) * 100)}%` }} />
+            <i style={{ width: `${Math.round((doneStages.length / STAGE_ORDER.length) * 100)}%` }} />
           </div>
         </div>
-      )}
+      ) : null}
 
-      {phase === "approval" && (
-        <div className="ot-approval" role="group" aria-label="Approval card preview">
-          <p className="tag">Approval inbox · draft</p>
+      {failure ? (
+        <div className="ot-approval" role="alert" aria-label="First plan result">
+          <p className="tag">No week drafted yet</p>
+          <p className="ot-approval__title">{failure.message}</p>
+          <p className="ot-meta">
+            {FAILURE_NEXT_STEP[failure.code] ??
+              "Nothing was changed. Try again, or add recipes from your saved links."}
+          </p>
+          <div className="ot-primary">
+            <OtButton
+              full
+              onClick={() => update({ ...draft, finishedAt: new Date().toISOString(), completed: Array.from(new Set([...draft.completed, 6 as OnboardStep])) })}
+            >
+              Finish without a plan ›
+            </OtButton>
+          </div>
+        </div>
+      ) : null}
+
+      {plan ? (
+        <div className="ot-approval" role="group" aria-label="Drafted week">
+          <p className="tag">Draft week · awaiting your review</p>
           <p className="ot-approval__title">Draft week · {nextMondayLabel()}</p>
           <p className="ot-meta">
-            {draft.members.length} member{draft.members.length === 1 ? "" : "s"} · {mealCount} meals ·
-            from the starter library
+            {draft.members.length} member{draft.members.length === 1 ? "" : "s"} · {plan.slots} meal
+            slots · {plan.created ? "newly drafted" : "already drafted for this week"}
           </p>
-          <p className="ot-okline">✓ Passed safety checks</p>
-          <div className="ot-disabled-btns">
-            <OtButton disabled>Approve</OtButton>
-            <OtButton kind="ghost" disabled>Edit</OtButton>
-            <OtButton kind="ghost" disabled>Decline</OtButton>
-          </div>
-          <p className="ot-stub-note">
-            This is where the drafted week lands and goes to your approval inbox. The planner
-            arrives with milestone M3 (WP-3.1–3.6), so no real recipes are shown yet.
-          </p>
+          {importNote ? <p className="ot-meta">{importNote}</p> : null}
+          <table className="ot-week">
+            <caption className="ot-sr-only">Planned meals by day</caption>
+            <tbody>
+              {Object.entries(planByDay(plan.meals)).map(([day, slots]) => (
+                <tr key={day}>
+                  <th scope="row">{dayLabel(day)}</th>
+                  <td>
+                    {slots.map((m) => (
+                      <div key={`${m.date}-${m.mealType}`} className="ot-mealcell">
+                        <b>{MEAL_LABELS[m.mealType] ?? m.mealType}</b>
+                        <span>{m.recipeName || "recipe name unavailable"}</span>
+                      </div>
+                    ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <div className="ot-primary">
             <OtButton
               full
@@ -299,7 +432,7 @@ export function Review({
             </OtButton>
           </div>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

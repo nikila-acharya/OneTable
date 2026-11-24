@@ -687,3 +687,59 @@
 .ot-sources-card__web { margin-top: 8px; }
 .ot-sources-explain { font-size: 14px; margin: 0 0 8px; }
 .ot-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--stone); color: var(--ink); font-size: 12px; font-weight: 500; }
+
+/* PR-3: the drafted week. Replaces the stub approval card, which styled nothing
+   because it showed no data. Token colours only (--line, --ink, --ink-soft),
+   matching the rest of this file. */
+.ot-week {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.ot-week th {
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 7px 10px 7px 0;
+  border-top: 1px solid var(--line);
+}
+.ot-week td {
+  vertical-align: top;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+}
+.ot-mealcell {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--ink);
+  padding: 2px 0;
+}
+.ot-mealcell b {
+  flex: 0 0 auto;
+  min-width: 78px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* The table caption is for screen readers only; without this rule it would
+   render as visible text, because the class did not exist before. */
+.ot-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
