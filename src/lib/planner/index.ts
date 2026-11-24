@@ -14,7 +14,18 @@ export interface Recipe {
   caloriesPerServing: number;
   allergens: string[];
   isOwnSource: boolean;
+  /**
+   * Which slots this dish is meant to fill. Optional on purpose: the planner
+   * fixtures and any recipe predating ADR-124 carry no tags, and an untagged
+   * recipe must keep the energy-only behaviour rather than disappear from every
+   * band. A caller that loads from the database (planning/pool.ts) always sets
+   * it from `recipe.meal_types`.
+   */
+  mealTypes?: readonly SlotKind[];
 }
+
+/** The three cooked slots. `snack` exists in MealSlot but is not banded here. */
+export type SlotKind = "breakfast" | "lunch" | "dinner" | "snack";
 
 export interface MealSlot {
   date: string; // ISO date: YYYY-MM-DD
@@ -188,14 +199,29 @@ export function createPlan(options: PlanOptions): MealPlan {
     throw new Error("createPlan: every pooled recipe is excluded by the household allergens");
   }
 
-  // Breakfast options
-  const breakfastOptions = availableRecipes.filter((r) => r.caloriesPerServing < 400);
+  // ADR-124. Energy bands stay exactly as they were, but they are no longer the
+  // ONLY rule: a slot used to be filled by any recipe whose calories fit, so a
+  // 311 kcal upma was eligible for dinner and a 363 kcal roti-sabzi for
+  // breakfast. That is what the first real production week exposed - see ADR-124,
+  // which is why meal_types is now consulted. Untagged recipes keep the old
+  // energy-only behaviour per band, so nothing silently vanishes from a pool.
+  const ENERGY_BANDS: Record<"breakfast" | "lunch" | "dinner", (kcal: number) => boolean> = {
+    breakfast: (k) => k < 400,
+    lunch: (k) => k >= 250 && k < 450,
+    dinner: (k) => k >= 300,
+  };
 
-  // Lunch options
-  const lunchOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 250 && r.caloriesPerServing < 450);
+  const forSlot = (slot: "breakfast" | "lunch" | "dinner"): Recipe[] => {
+    const byEnergy = availableRecipes.filter((r) => ENERGY_BANDS[slot](r.caloriesPerServing));
+    const tagged = byEnergy.filter((r) => (r.mealTypes ?? []).includes(slot));
+    // Fall back per band, never globally: a pool whose recipes are all tagged
+    // for other slots still gets a full week rather than an empty option list.
+    return tagged.length > 0 ? tagged : byEnergy;
+  };
 
-  // Dinner options (own-source required for some slots if option set)
-  const dinnerOptions = availableRecipes.filter((r) => r.caloriesPerServing >= 300);
+  const breakfastOptions = forSlot("breakfast");
+  const lunchOptions = forSlot("lunch");
+  const dinnerOptions = forSlot("dinner");
   const ownSourceDinners = dinnerOptions.filter((r) => r.isOwnSource);
 
   // rng.choice() on an empty array returns undefined, and the meal was then
@@ -221,8 +247,28 @@ export function createPlan(options: PlanOptions): MealPlan {
     currentDate.setDate(currentDate.getDate() + day);
     const dateStr = currentDate.toISOString().split("T")[0]!;
 
-    // Select breakfast
-    const breakfast = rng.choice(breakfastOptions);
+    // ADR-124 part 2: no identical dish twice in one calendar day. The first
+    // production week served Suji Upma for both lunch and dinner on the same day
+    // (and again for breakfast+lunch two days later). Draws stay one-per-slot, so
+    // the seeded sequence length is unchanged and determinism holds; only the
+    // candidate list shrinks as the day fills up. If a band is left with nothing
+    // but already-used dishes, repeating is better than a hole in the week; that
+    // fallback is deliberate (a missing meal is worse than a familiar one).
+    const usedToday = new Set<string>();
+    const pick = (candidates: Recipe[]): { recipe: Recipe; repeated: boolean } => {
+      const fresh = candidates.filter((r) => !usedToday.has(r.id));
+      const list = fresh.length > 0 ? fresh : candidates;
+      const chosen = rng.choice(list);
+      if (!chosen) {
+        throw new Error(
+          `createPlan: no candidate recipe left for ${dateStr} (pool=${options.pool.length}, available after allergens=${availableRecipes.length})`,
+        );
+      }
+      usedToday.add(chosen.id);
+      return { recipe: chosen, repeated: fresh.length === 0 };
+    };
+
+    const breakfast = pick(breakfastOptions).recipe;
     meals.push({
       date: dateStr,
       mealType: "breakfast",
@@ -230,8 +276,7 @@ export function createPlan(options: PlanOptions): MealPlan {
       locked: false,
     });
 
-    // Select lunch
-    const lunch = rng.choice(lunchOptions);
+    const lunch = pick(lunchOptions).recipe;
     meals.push({
       date: dateStr,
       mealType: "lunch",
@@ -246,9 +291,9 @@ export function createPlan(options: PlanOptions): MealPlan {
       ownSourceDinners.length > 0 &&
       rng.next() > 0.4
     ) {
-      dinner = rng.choice(ownSourceDinners);
+      dinner = pick(ownSourceDinners).recipe;
     } else {
-      dinner = rng.choice(dinnerOptions);
+      dinner = pick(dinnerOptions).recipe;
     }
     meals.push({
       date: dateStr,

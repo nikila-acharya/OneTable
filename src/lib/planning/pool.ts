@@ -204,6 +204,10 @@ export async function loadRecipePool(
       // "Own source" in PRD terms means it came from a creator the household
       // linked; a recipe they typed themselves is also theirs.
       isOwnSource: own,
+      // ADR-124: the planner needs the declared slots. `meal_types` was already
+      // stored and already loaded here - it simply never reached the domain
+      // object, which is how calories ended up being the only band signal.
+      mealTypes: r.mealTypes,
     });
   }
 
