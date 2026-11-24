@@ -250,8 +250,8 @@ describe("step 3 — members: required fields, consent (PV01), child rules, SG01
   });
 });
 
-describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
-  it("full happy path: meals from attendance, review chips match storage, stub plan, done, resume", async () => {
+describe("steps 4 + 6 — meals, review and the first plan", () => {
+  it("full happy path: meals from attendance, review chips match storage, real plan, done, resume", async () => {
     // household
     await toHousehold();
     await fillHousehold();
@@ -310,18 +310,82 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     // meals summary line: breakfast + lunch packed (lunch on, dinner off, snack on)
     expect(screen.getByText("B · L packed · S")).toBeTruthy();
 
-    // first-plan stub
+    // The first plan is now a real request sequence. These assertions replaced
+    // ones that pinned the stub's wording ("Approval inbox · draft",
+    // "✓ Passed safety checks", "planner arrives with milestone M3", four
+    // animated lines), none of which described work that was happening.
+    const calls: string[] = [];
+    const planBody = {
+      created: true,
+      planId: "plan-1",
+      weekStart: "2026-11-16",
+      seed: 7,
+      slots: 6,
+      status: "draft",
+      meals: [
+        { date: "2026-11-17", mealType: "dinner", recipeId: "r1", recipeName: "Dal Tadka" },
+        { date: "2026-11-16", mealType: "breakfast", recipeId: "r2", recipeName: "Masala Oats" },
+        { date: "2026-11-16", mealType: "lunch", recipeId: "r3", recipeName: "Rajma Chawal" },
+        { date: "2026-11-16", mealType: "dinner", recipeId: "r1", recipeName: "Dal Tadka" },
+        { date: "2026-11-17", mealType: "breakfast", recipeId: "r2", recipeName: "Masala Oats" },
+        { date: "2026-11-17", mealType: "lunch", recipeId: "r4", recipeName: "Paneer Bhurji" },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: unknown, init?: { method?: string }) => {
+        const path = String(input);
+        calls.push(`${init?.method ?? "GET"} ${path}`);
+        if (path === "/api/sources") {
+          return new Response(
+            JSON.stringify({ sources: [{ url: "https://dal.test/r", creatorName: "Dal Kitchen", chip: { kind: "website", text: "website" } }] }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        if (path === "/api/sources/import") {
+          return new Response(
+            JSON.stringify({
+              imported: [{ url: "https://dal.test/r", status: "imported" }],
+              skipped: [{ url: "https://blocked.test/r", status: "skipped", reason: "The site's robots.txt does not allow this page, so we skipped it." }],
+              alreadyImported: 0,
+              remaining: 3,
+              nutritionConfigured: true,
+              plannerReady: 1,
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        if (path === "/api/plans/first") {
+          return new Response(JSON.stringify(planBody), { status: 201, headers: { "content-type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ householdId: "h", members: 1, consents: 0 }), { status: 201, headers: { "content-type": "application/json" } });
+      }),
+    );
+
     fireEvent.click(screen.getByRole("button", { name: "Plan our first week" }));
-    const progress = await screen.findByRole("group", { name: "Approval card preview" });
-    expect(within(progress).getByText(/Approval inbox · draft/)).toBeTruthy();
-    expect(within(progress).getByText("✓ Passed safety checks")).toBeTruthy();
-    expect(within(progress).getByText(/planner arrives with milestone M3/)).toBeTruthy();
-    expect(within(progress).getByRole("button", { name: "Approve" }).hasAttribute("disabled")).toBe(true);
+
+    const drafted = await screen.findByRole("group", { name: "Drafted week" });
+    expect(within(drafted).getByText(/6 meal\s*slots/)).toBeTruthy();
+    expect(within(drafted).getByText(/newly drafted/)).toBeTruthy();
+    // the real week, grouped by day, sourced from what the server returned
+    // a repeated recipe must appear on each day it was planned for, not once
+    expect(within(drafted).getAllByText("Masala Oats")).toHaveLength(2);
+    expect(within(drafted).getByText("Paneer Bhurji")).toBeTruthy();
+    expect(within(drafted).getAllByText("Dal Tadka")).toHaveLength(2);
+    const rows = within(drafted).getAllByRole("row");
+    expect(rows).toHaveLength(2); // two days in the fixture
+    // no linked sources at mount here, so the importer is correctly not called;
+    // the branch with sources present is covered in steps/review.plan.test.tsx
+    expect(calls.some((c) => c.includes("/api/sources/import"))).toBe(false);
+    // the claim that used to be rendered unconditionally must be gone
+    expect(screen.queryByText(/Passed safety checks/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
     expect(storedDraft().firstPlanRequestedAt).toBeTruthy();
-    // the four progress lines are shown and complete
-    const lines = document.querySelectorAll(".ot-prog-line--done");
-    expect(lines).toHaveLength(4);
-    expect(screen.getByText(/Checking allergies against every recipe/)).toBeTruthy();
+    // order matters: the draft is saved before anything is planned
+    expect(calls.filter((c) => c.startsWith("POST"))).toEqual([
+      "POST /api/onboarding/complete",
+      "POST /api/plans/first",
+    ]);
 
     fireEvent.click(screen.getByRole("button", { name: "Finish setup ›" }));
     await screen.findByText(/You’re all set, The Test Family!/);
@@ -332,7 +396,7 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     await screen.findByText(/You’re all set, The Test Family!/);
   });
 
-  it("resuming mid-review replays the plan stub in its finished state", async () => {
+  it("resuming mid-review does not fake a finished plan or create one on mount", async () => {
     const d = newDraft();
     d.step = 6;
     d.completed = [1, 2, 3, 4];
@@ -345,11 +409,33 @@ describe("steps 4 + 6 — meals, review and the first-plan stub", () => {
     d.firstPlanRequestedAt = "2026-10-16T00:00:00.000Z";
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 
+    const seen: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: unknown, init?: { method?: string }) => {
+        seen.push(`${init?.method ?? "GET"} ${String(input)}`);
+        if (String(input) === "/api/sources") {
+          return new Response(JSON.stringify({ sources: [] }), { status: 200, headers: { "content-type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } });
+      }),
+    );
+
     render(<OnboardingApp />);
     await screen.findByRole("heading", { name: /Review/ });
-    await screen.findByRole("group", { name: "Approval card preview" }); // no animation needed on resume
     await expectNeverChip("peanuts");
     expect(document.getElementById("stepnum")!.textContent).toBe("Step 6 of 6");
+
+    // Replacing the old "replays the plan stub in its finished state" check:
+    // resuming used to fake a finished card. It must instead ask, and above all
+    // must not create a plan just because the screen mounted.
+    // queryBy, not getBy: nothing is rendered on mount, and getByRole throws
+    expect(screen.queryByRole("group", { name: "Drafted week" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "First plan result" })).toBeNull();
+    expect(
+      seen.some((c) => c === "POST /api/plans/first" || c === "POST /api/sources/import"),
+    ).toBe(false);
+    expect(screen.getByText(/already asked for a draft week once/)).toBeTruthy();
   });
 
   it("step 5 (WP-2.7): pasted links are saved to /api/sources and the social card offers Add website", async () => {
