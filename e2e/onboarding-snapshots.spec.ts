@@ -23,16 +23,37 @@ const SCREENS = [
 
 for (const s of SCREENS) {
   test(`ON01 ${s.key} visual snapshot`, async ({ page }) => {
+    let planningRequested = false;
+    if (s.key === "step-6") {
+      // Registered BEFORE the page loads: a spy attached after boot could never
+      // observe a mount-time request, which is exactly what must not happen.
+      await page.route("**/api/plans/first", (route) => {
+        planningRequested = true;
+        void route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: '{"error":"unauthenticated"}',
+        });
+      });
+    }
+
     await bootWithDraft(page, SCREEN_SEEDS[s.key]);
     // The awaited screen proves hydration resumed at the seeded step.
     await expect(page.locator(s.label)).toBeVisible();
 
-    // Step 6 renders in the approval phase (firstPlanRequestedAt seeded):
-    // assert the stub card and the frozen "next Monday" label are present so
-    // a regression that silently falls back to Welcome can never pass.
+    // Step 6 used to be asserted through the stub card ("Approval card preview"
+    // plus a frozen "Draft week · Mon, Oct 19"), i.e. the test pinned a screen that
+    // claimed a drafted week without asking for one. Those assertions were
+    // replaced, not deleted: step 6 must now resume honestly, and mounting must
+    // not create a plan. The week table itself is covered by
+    // src/app/onboarding/steps/review.plan.test.tsx, which stubs the endpoint
+    // and asserts the rendered rows; a browser test is the wrong place to pin
+    // planner output.
     if (s.key === "step-6") {
-      await expect(page.getByRole("group", { name: "Approval card preview" })).toBeVisible();
-      await expect(page.getByText("Draft week · Mon, Oct 19")).toBeVisible();
+      await expect(page.getByText(/already asked for a draft week once/)).toBeVisible();
+      await expect(page.getByRole("group", { name: "Drafted week" })).toHaveCount(0);
+      await expect(page.getByRole("alert", { name: "First plan result" })).toHaveCount(0);
+      expect(planningRequested).toBe(false);
     }
 
     await expect(page).toHaveScreenshot(`${s.key}.png`, { fullPage: true });
