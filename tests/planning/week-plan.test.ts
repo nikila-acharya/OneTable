@@ -233,12 +233,18 @@ describe.skipIf(!hasDb)("planning against real rows", { timeout: 30000 }, () => 
     expect(ids).toContain(aloo);
   });
 
-  it("refuses to plan for a vegetarian household rather than guessing from ingredient text", { timeout: 30000 }, async () => {
+  // Vegan, not vegetarian: the starter library (migration 0008) ships recipes that
+  // ASSERT vegetarian, so a vegetarian member is now genuinely satisfiable and this
+  // test would prove nothing - it would pass only because some other household's
+  // shared row happened to carry the tag. Vegan is the diet nothing in the library
+  // asserts, which keeps the property under test intact: an unproven diet excludes
+  // the recipe instead of letting the planner infer vegetarianism from "paneer".
+  it("refuses to plan for a diet no recipe asserts, rather than guessing from ingredient text", { timeout: 30000 }, async () => {
     const hh = await newHousehold("pool-diet");
-    const m = await newMember(hh, { name: "Veg", birthYm: "1995-06", diet: "vegetarian" });
+    const m = await newMember(hh, { name: "Vegan", birthYm: "1995-06", diet: "vegan" });
     await newRecipe(hh, { title: "Paneer", kcal: 450, tags: [] });
 
-    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "vegetarian" }]);
+    const out = await loadRecipePool(db, hh, [{ id: m, allergens: [], otherAllergens: [], conditions: [], diet: "vegan" }]);
     expect(out.recipes).toHaveLength(0);
     expect(out.blockedOn).toBe("diet_provenance_unavailable");
   });
