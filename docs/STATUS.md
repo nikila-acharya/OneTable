@@ -26,7 +26,7 @@ Last updated: 2026-11-24 - `main` = 8406c7e (ADR-124, PR #63); WP-2.8 FDC alias 
 ## Blocked on owner (PRD 13.3)
 | Item | Ask |
 |---|---|
-| **Dietitian pass (ADR-125)** | Review the `fdc_alias` seed (610 keys, `reviewed=false`): right records, right portion grams, right inclusions/exclusions for this family. Flip `reviewed` by migration as entries are confirmed. Blocks any "nutrition reviewed" claim in UI copy (none exists today). |
+| ~~Dietitian pass (ADR-125)~~ **CLOSED 2026-11-25** | RD (sig. "nk") approved all 203 pinned records; 4 mispins fixed in migration 0010, `reviewed=true` flipped in 0011. "Nutrition reviewed" claims are now grounded. |
 | ADR-015 | Approve or amend the social-platform terms note |
 | YouTube reader | Decide whether to enable `YOUTUBE_READER_ENABLED`: needs a Google Cloud project + API key (new external account) **and** a <30-day refresh/re-validation loop for description-derived copies (ADR-015 YouTube section, III.E.4/III.E.8 retention risk) |
 | Stray remote branches | Deletion needs owner OK (wp/0.1-scaffold, wp/1.2-member-crud, wp/1.4-condition-gate, wp-0.6-design-tokens) |

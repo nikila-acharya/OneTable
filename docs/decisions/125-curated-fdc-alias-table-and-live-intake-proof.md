@@ -1,7 +1,7 @@
 # ADR 125 — curated FDC alias table weighs volume lines; intake proved live in production
 
 Date: 2026-11-24
-Status: Implemented (PR pending owner merge) — **the dietitian pass is an open owner gate**
+Status: Implemented (PR pending owner merge) — dietitian pass COMPLETE 2026-11-25 (migrations 0010 + 0011)
 Supersedes: the "curated alias→FDC table … until then intake results will often be
   excluded no_nutrients" consequence left open by ADR-123
 Touches: PRD §5.3 (RE03), ADR-119 (planner pools), ADR-121 (synchronous intake),
@@ -128,6 +128,11 @@ since FDC has no milk-solids record. `scripts/fdc-alias-seed.json` and
 the same final state; 0009 itself was not rewritten (already applied
 everywhere — patched forward instead, per the ADR-123 journal pitfall).
 
-`reviewed` was NOT flipped by this sheet: every row still says `false`, because
-the signature's provenance (owner self-review vs dietitian) is unconfirmed, and
-this column exists exactly to distinguish the two. See STATUS §Blocked.
+`reviewed` was NOT flipped by the first return of this sheet: every row still
+said `false`, because the signature's provenance (owner self-review vs
+dietitian) was unconfirmed. **Resolved 2026-11-25:** the owner confirmed "nk"
+is the dietitian; migration `0011_rd_pass` flips all surviving 608 keys to
+`reviewed=true`. The repinned records hold the same food identity the RD
+signed for (flour→flour, milk powder→dry milk, kiwi→kiwifruit), so the flip
+covers the repaired table honestly; nothing claimed "reviewed" before the
+repairs existed. The PRD 13.3 dietitian gate is CLOSED.

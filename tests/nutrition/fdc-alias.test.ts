@@ -56,12 +56,12 @@ describe.skipIf(!hasDb)("fdc_alias table (live DB, migration 0009)", () => {
     raw = opened.sql;
   });
 
-  it("ships the curated rows, unreviewed and household-less by construction", async () => {
+  it("ships the curated rows, dietitian-approved and household-less by construction", async () => {
     const row = await lookupAlias(db, "cooked rice");
     expect(row).not.toBeNull();
     expect(row!.unitGrams.cup).toBe(158); // USDA #169708 foodPortions: 1 cup cooked rice = 158 g
     expect(row!.per100g.energyKcal).toBeGreaterThan(100);
-    expect(row!.reviewed).toBe(false); // dietitian pass pending (ADR-125)
+    expect(row!.reviewed).toBe(true); // RD pass 2026-11-25 (sheet: 203/203 approved; mispins fixed in 0010; flip in 0011)
     const cols = await raw`select column_name from information_schema.columns where table_name = 'fdc_alias' and column_name = 'household_id'`;
     expect(Array.from(cols as unknown[]).length).toBe(0); // global rows: PV03 erasure must never have to reach them
   });
