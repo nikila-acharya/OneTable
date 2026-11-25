@@ -1,6 +1,14 @@
 # OneTable - Build Status
 
-Last updated: 2026-11-03 - `main` = dd9ba5d (WP-2.5, PR #42); WP-2.7 on branch `build/wp-2.7-creators` (PR pending)
+Last updated: 2026-11-24 - `main` = 8406c7e (ADR-124, PR #63); WP-2.8 FDC alias table on branch `build/wp-2.8-fdc-aliases` (ADR-125, PR pending)
+
+## Recent (Nov 20-24, PRs #49-#63 — details in docs/decisions/ADR-118..125)
+- Prod deployed GREEN on the alias app's own CI (deploy.yml runs `npm run db:migrate`).
+- #49 JWT sessions (credentials sign-in actually works), #50 AC01 free-tier cap 10, #53 idempotent onboarding, #54 422 + redacted 500 logs, #55 monitoring status, #56 dead-M6 observability removed (ADR-118), #57 plans generated from real recipe pools (ADR-119), #58 canonical allergen vocabulary (ADR-120), #59 synchronous bulk intake + asserted diet provenance (ADR-121), #60 onboarding step 6 runs the real pipeline (ADR-122), #61 starter library shipped as migration 0008 (ADR-123), #63 meal-type bands + no same-day repeats (ADR-124).
+- First production plans exist (owner household "Raos", draft week from the starter library).
+- **Live intake proven in production** (ADR-125): disposable household, 7/8 real URLs imported across the owner's four trusted sites; owner household untouched.
+- **ADR-125 / WP-2.8 (this branch)**: curated `fdc_alias` table (610 keys, migration 0009, all values USDA-resolved live by `scripts/build-fdc-aliases.ts`), alias-first enrichment with USDA `foodPortions` densities, dual nutrient-id extraction (Foundation SR28 ids), parser hygiene (bullets, ranges, size descriptors). Dietitian pass pending → rows `reviewed=false` (owner gate).
+- Prod probe households: `hermes-verify-mwv3j8f8` erased post-verification (PV03 seam); `hermes-verify-intake-mwv6sct9` held until the before/after nutrition measurement on this branch deploys, then erased on owner's word.
 
 ## Verified state (CI green on each merge)
 - M0 complete: WP-0.1 scaffold, WP-0.2 Drizzle schema (33 tables, Neon `onetable_dev`), WP-0.3 CI + rule-source/banned-copy gates, WP-0.4 Auth.js v5 + AES-256-GCM, WP-0.5 tool registry R/A/P/X, WP-0.6 tokens/components/gallery
@@ -18,6 +26,7 @@ Last updated: 2026-11-03 - `main` = dd9ba5d (WP-2.5, PR #42); WP-2.7 on branch `
 ## Blocked on owner (PRD 13.3)
 | Item | Ask |
 |---|---|
+| **Dietitian pass (ADR-125)** | Review the `fdc_alias` seed (610 keys, `reviewed=false`): right records, right portion grams, right inclusions/exclusions for this family. Flip `reviewed` by migration as entries are confirmed. Blocks any "nutrition reviewed" claim in UI copy (none exists today). |
 | ADR-015 | Approve or amend the social-platform terms note |
 | YouTube reader | Decide whether to enable `YOUTUBE_READER_ENABLED`: needs a Google Cloud project + API key (new external account) **and** a <30-day refresh/re-validation loop for description-derived copies (ADR-015 YouTube section, III.E.4/III.E.8 retention risk) |
 | Stray remote branches | Deletion needs owner OK (wp/0.1-scaffold, wp/1.2-member-crud, wp/1.4-condition-gate, wp-0.6-design-tokens) |

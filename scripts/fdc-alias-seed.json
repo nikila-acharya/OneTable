@@ -1,0 +1,2081 @@
+{
+ "$note": [
+  "ADR-125: curated ingredient-name -> USDA FoodData Central target map.",
+  "This file contains NO nutrition values. scripts/build-fdc-aliases.ts resolves every",
+  "target live against the FDC API (foods/search -> GET /food/{fdcId}?format=full),",
+  "refuses any target whose returned description does not contain `expect` (each |-",
+  "separated fragment must appear), refuses duplicate keys, and extracts per-100g",
+  "nutrients plus unit weights ONLY from USDA's own foodPortions records. A food USDA",
+  "gives no portion for keeps no unit weights: its volume lines stay `unweighed`,",
+  "exactly as designed.",
+  "`keys` are the food strings parseIngredientLine actually produced in the 2026-11-24",
+  "production gap profile plus high-frequency equivalents from the Gate A corpus.",
+  "Ambiguous bare names ('rice' alone) are aliased only where raw/cooked is derivable",
+  "from the record choice and said in source_note. Foods FDC genuinely lacks (garam",
+  "masala, kasuri methi, curry leaves, black salt, hing, idli/dosa batter) are absent",
+  "on purpose. Dietitian pass pending: every row ships reviewed=false."
+ ],
+ "targets": [
+  {
+   "keys": [
+    "cooked white rice",
+    "white rice, cooked",
+    "cooked rice",
+    "boiled rice",
+    "rice, cooked"
+   ],
+   "query": "rice white long-grain parboiled enriched cooked",
+   "expect": "cooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cooked brown rice",
+    "brown rice, cooked"
+   ],
+   "query": "rice brown long-grain cooked",
+   "expect": "cooked",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "brown rice",
+    "rice brown"
+   ],
+   "query": "rice brown long-grain raw enriched parboiled",
+   "expect": "raw",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "basmati rice",
+    "rice basmati"
+   ],
+   "query": "rice basmati",
+   "expect": "basmati",
+   "dataType": "Foundation,SR Legacy,Branded"
+  },
+  {
+   "keys": [
+    "idli rice",
+    "rice idli"
+   ],
+   "query": "rice idli",
+   "expect": "idli",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "quinoa",
+    "quinoa cooked"
+   ],
+   "query": "quinoa cooked",
+   "expect": "quinoa|cooked",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "rolled oats",
+    "oats",
+    "oatmeal"
+   ],
+   "query": "cereals oats regular and quick not fortified dry",
+   "expect": "oats",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "semolina",
+    "suji",
+    "sooji"
+   ],
+   "query": "cereals cream of wheat instant dry",
+   "expect": "cream of wheat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "all-purpose flour",
+    "all purpose flour",
+    "plain flour",
+    "maida",
+    "flour"
+   ],
+   "query": "flour wheat all-purpose enriched unbleached",
+   "expect": "all-purpose",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "whole wheat flour",
+    "atta",
+    "chapati flour",
+    "wheat flour"
+   ],
+   "query": "flour whole wheat",
+   "expect": "whole wheat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "gram flour",
+    "besan",
+    "chickpea flour"
+   ],
+   "query": "chickpea flour",
+   "expect": "chickpea",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "rice flour"
+   ],
+   "query": "rice flour",
+   "expect": "rice flour",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "masa harina",
+    "corn masa",
+    "harina"
+   ],
+   "query": "corn masa flour",
+   "expect": "masa",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "cornstarch",
+    "cornflour",
+    "arrowroot powder"
+   ],
+   "query": "arrowroot raw",
+   "expect": "arrowroot",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "granulated sugar",
+    "sugar",
+    "white sugar"
+   ],
+   "query": "sugar granulated",
+   "expect": "granulated",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "powdered sugar",
+    "icing sugar",
+    "confectioners sugar"
+   ],
+   "query": "sugar confectioners powdered",
+   "expect": "confectioners",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "brown sugar"
+   ],
+   "query": "sugar brown packed moist",
+   "expect": "brown",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "honey"
+   ],
+   "query": "honey",
+   "expect": "honey",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "butter",
+    "salted butter",
+    "unsalted butter"
+   ],
+   "query": "butter salted",
+   "expect": "salted",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "ghee",
+    "clarified butter"
+   ],
+   "query": "butter clarified butter ghee",
+   "expect": "ghee",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "milk",
+    "whole milk"
+   ],
+   "query": "milk whole 3.25% milkfat with added vitamin d",
+   "expect": "whole",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "low fat milk",
+    "2% milk",
+    "reduced fat milk"
+   ],
+   "query": "milk reduced fat fluid 2% milkfat",
+   "expect": "2%",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "yogurt",
+    "greek yogurt",
+    "hung yogurt",
+    "hung curd",
+    "curd",
+    "dahi",
+    "plain yogurt"
+   ],
+   "query": "yogurt greek plain nonfat",
+   "expect": "greek",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "heavy cream",
+    "whipping cream",
+    "double cream"
+   ],
+   "query": "cream heavy whipping",
+   "expect": "heavy",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "cream",
+    "table cream",
+    "single cream",
+    "fresh cream"
+   ],
+   "query": "cream table whip",
+   "expect": "cream",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "evaporated milk"
+   ],
+   "query": "milk canned evaporated whole with added vitamin d",
+   "expect": "evaporated",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "coconut milk",
+    "coconut milk canned",
+    "canned coconut milk"
+   ],
+   "query": "milk from coconut canned undiluted",
+   "expect": "coconut",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "coconut cream"
+   ],
+   "query": "coconut cream",
+   "expect": "coconut",
+   "dataType": "SR Legacy,Branded"
+  },
+  {
+   "keys": [
+    "cream cheese"
+   ],
+   "query": "cheese cream",
+   "expect": "cream",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cheddar cheese",
+    "shredded cheddar",
+    "colby jack",
+    "cheese",
+    "grated cheese",
+    "shredded cheese"
+   ],
+   "query": "cheddar or colby cheese",
+   "expect": "cheddar",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "mozzarella",
+    "shredded mozzarella"
+   ],
+   "query": "cheese mozzarella part-skim low moisture",
+   "expect": "mozzarella",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "parmesan",
+    "parmesan cheese"
+   ],
+   "query": "cheese parmesan hard",
+   "expect": "parmesan",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "paneer"
+   ],
+   "query": "paneer cheese",
+   "expect": "paneer",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "tofu",
+    "firm tofu",
+    "extra firm tofu",
+    "bean curd"
+   ],
+   "query": "tofu firm prepared with nigari",
+   "expect": "tofu, firm",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "silken tofu",
+    "soft tofu"
+   ],
+   "query": "tofu soft",
+   "expect": "tofu, soft",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "tempeh"
+   ],
+   "query": "tempeh",
+   "expect": "tempeh",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "olive oil",
+    "extra virgin olive oil",
+    "ev olive oil"
+   ],
+   "query": "oil olive salad or cooking",
+   "expect": "olive",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "vegetable oil",
+    "cooking oil",
+    "neutral oil",
+    "sunflower oil",
+    "canola oil",
+    "corn oil",
+    "soybean oil",
+    "rapeseed oil",
+    "refined oil"
+   ],
+   "query": "oil soybean salad or cooking",
+   "expect": "soybean",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "mustard oil"
+   ],
+   "query": "mustard oil",
+   "expect": "mustard",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "sesame oil",
+    "toasted sesame oil"
+   ],
+   "query": "oil sesame salad or cooking",
+   "expect": "sesame",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "peanut oil"
+   ],
+   "query": "oil peanut salad or cooking",
+   "expect": "peanut",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "coconut oil"
+   ],
+   "query": "coconut oil",
+   "expect": "coconut oil",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "peanut butter",
+    "pb"
+   ],
+   "query": "peanut butter without added salt",
+   "expect": "peanut butter",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cashews",
+    "cashew nuts",
+    "nuts, cashew"
+   ],
+   "query": "nuts cashew nuts raw",
+   "expect": "cashew",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "almonds",
+    "almond nuts",
+    "slivered almonds"
+   ],
+   "query": "nuts almonds",
+   "expect": "almonds",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "peanuts",
+    "groundnuts",
+    "roasted peanuts"
+   ],
+   "query": "peanuts all types raw",
+   "expect": "peanuts",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "raisins"
+   ],
+   "query": "raisins seedless",
+   "expect": "raisins",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "pistachios"
+   ],
+   "query": "nuts pistachio nuts raw",
+   "expect": "pistachio",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "sunflower seeds"
+   ],
+   "query": "sunflower seed kernels",
+   "expect": "sunflower",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "pumpkin seeds"
+   ],
+   "query": "pumpkin seeds",
+   "expect": "pumpkin",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "flax seeds",
+    "ground flaxseed",
+    "flaxseed meal",
+    "linseeds",
+    "flaxseed"
+   ],
+   "query": "flaxseed",
+   "expect": "flax",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "chia seeds",
+    "chia"
+   ],
+   "query": "chia seeds",
+   "expect": "chia",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "shredded coconut",
+    "coconut flakes",
+    "desiccated coconut"
+   ],
+   "query": "coconut meat dried desiccated not presulfured",
+   "expect": "coconut meat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "water",
+    "hot water",
+    "boiling water"
+   ],
+   "query": "water bottled or tap",
+   "expect": "water",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "black beans",
+    "black turtle beans",
+    "canned black beans"
+   ],
+   "query": "beans black turtle mature seeds cooked boiled without salt",
+   "expect": "black",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "kidney beans",
+    "red kidney beans",
+    "rajma",
+    "canned kidney beans",
+    "dark kidney beans"
+   ],
+   "query": "beans kidney red mature seeds cooked boiled without salt",
+   "expect": "kidney",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "chickpeas",
+    "chana",
+    "garbanzo beans",
+    "canned chickpeas",
+    "bengal gram"
+   ],
+   "query": "chickpeas garbanzo beans bengal gram mature seeds canned",
+   "expect": "chickpeas",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "lentils",
+    "lentils cooked",
+    "cooked lentils",
+    "masoor dal",
+    "dal",
+    "red lentils"
+   ],
+   "query": "lentils cooked",
+   "expect": "lentils",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "mung beans",
+    "moong",
+    "split mung",
+    "mung dal",
+    "yellow mung"
+   ],
+   "query": "mung beans mature seeds cooked boiled without salt",
+   "expect": "mung",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "urad dal",
+    "black gram",
+    "urad"
+   ],
+   "query": "urad dal",
+   "expect": "urad",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "pinto beans"
+   ],
+   "query": "beans pinto mature seeds cooked boiled without salt",
+   "expect": "pinto",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "edamame",
+    "soybeans green"
+   ],
+   "query": "edamame",
+   "expect": "edamame",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "toor dal",
+    "split pigeon peas",
+    "pigeon peas"
+   ],
+   "query": "pigeonpeas mature seeds cooked boiled",
+   "expect": "pigeonpeas",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "chana dal",
+    "split chickpeas"
+   ],
+   "query": "chickpeas split",
+   "expect": "chickpeas",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "onion",
+    "red onion",
+    "yellow onion",
+    "chopped onion",
+    "big red onion",
+    "medium onion",
+    "medium red onion",
+    "sliced onion"
+   ],
+   "query": "onions raw",
+   "expect": "onions",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "shallots"
+   ],
+   "query": "shallots raw",
+   "expect": "shallots",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "garlic",
+    "garlic cloves",
+    "minced garlic",
+    "chopped garlic",
+    "roasted garlic"
+   ],
+   "query": "garlic",
+   "expect": "garlic",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "ginger",
+    "fresh ginger",
+    "ginger root",
+    "grated ginger"
+   ],
+   "query": "ginger root",
+   "expect": "ginger",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "green chili",
+    "green chilli",
+    "green chilies",
+    "green chillies",
+    "chili",
+    "chilli"
+   ],
+   "query": "peppers hot chili green raw",
+   "expect": "chili, green",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "tomato",
+    "tomatoes",
+    "chopped tomatoes",
+    "ripe tomatoes",
+    "medium tomatoes",
+    "diced tomatoes",
+    "cherry tomatoes"
+   ],
+   "query": "tomatoes red ripe raw year-round average",
+   "expect": "tomatoes",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "tomato paste"
+   ],
+   "query": "tomato paste",
+   "expect": "tomato paste",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "tomato puree",
+    "tomato sauce",
+    "red sauce",
+    "passata",
+    "red pasta sauce",
+    "pasta sauce"
+   ],
+   "query": "tomato puree sauce passata",
+   "expect": "tomato",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "ketchup",
+    "tomato ketchup"
+   ],
+   "query": "catsup",
+   "expect": "catsup",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cilantro",
+    "fresh coriander",
+    "coriander leaves",
+    "cilantro leaves",
+    "chopped cilantro",
+    "cilantro leaves with tender stems"
+   ],
+   "query": "coriander cilantro leaves raw",
+   "expect": "coriander (cilantro) leaves",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "mint",
+    "mint leaves",
+    "pudina"
+   ],
+   "query": "mint fresh",
+   "expect": "mint",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "basil",
+    "fresh basil",
+    "italian basil",
+    "tulsi"
+   ],
+   "query": "basil fresh",
+   "expect": "basil",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "spinach",
+    "baby spinach",
+    "palak"
+   ],
+   "query": "spinach raw",
+   "expect": "spinach",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "kale"
+   ],
+   "query": "kale raw",
+   "expect": "kale",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "lettuce",
+    "romaine lettuce",
+    "iceberg lettuce",
+    "lettuce leaves"
+   ],
+   "query": "lettuce iceberg includes crisphead types raw or drained",
+   "expect": "lettuce",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cabbage",
+    "green cabbage",
+    "shredded cabbage",
+    "coleslaw mix",
+    "purple cabbage"
+   ],
+   "query": "cabbage green raw",
+   "expect": "cabbage green",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "carrot",
+    "carrots",
+    "grated carrot",
+    "chopped carrot",
+    "diced carrots"
+   ],
+   "query": "carrots raw",
+   "expect": "carrots",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "beetroot",
+    "beets",
+    "boiled beets",
+    "grated beetroot"
+   ],
+   "query": "beets all grades roots raw",
+   "expect": "beets",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "potato",
+    "potatoes",
+    "boiled potatoes",
+    "medium potato",
+    "russet potato",
+    "baked potato"
+   ],
+   "query": "potatoes russet flesh and skin baked",
+   "expect": "russet",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "sweet potato",
+    "sweet potatoes"
+   ],
+   "query": "sweet potato cooked baked in skin without salt",
+   "expect": "sweet potato",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "peas",
+    "green peas",
+    "frozen peas",
+    "matar"
+   ],
+   "query": "peas green frozen cooked boiled drained without salt",
+   "expect": "peas, green, frozen",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "green beans",
+    "french beans",
+    "beans snap",
+    "cluster beans"
+   ],
+   "query": "beans snap green raw",
+   "expect": "snap, green",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "bell pepper",
+    "capsicum",
+    "green pepper",
+    "green bell pepper"
+   ],
+   "query": "peppers sweet green raw",
+   "expect": "sweet, green",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "red bell pepper"
+   ],
+   "query": "peppers sweet red raw",
+   "expect": "sweet, red",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "yellow bell pepper"
+   ],
+   "query": "peppers sweet yellow raw",
+   "expect": "sweet, yellow",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "broccoli",
+    "broccoli florets"
+   ],
+   "query": "broccoli raw",
+   "expect": "broccoli",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "cauliflower",
+    "cauliflower florets",
+    "gobi"
+   ],
+   "query": "cauliflower raw",
+   "expect": "cauliflower",
+   "dataType": "Foundation"
+  },
+  {
+   "keys": [
+    "zucchini"
+   ],
+   "query": "zucchini raw",
+   "expect": "zucchini",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "cucumber",
+    "cucumbers"
+   ],
+   "query": "cucumber raw peel",
+   "expect": "cucumber",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "mushroom",
+    "mushrooms",
+    "button mushrooms",
+    "cremini mushrooms",
+    "chopped mushrooms",
+    "sliced mushrooms"
+   ],
+   "query": "mushrooms white raw",
+   "expect": "mushrooms",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "eggplant",
+    "brinjal",
+    "aubergine"
+   ],
+   "query": "eggplant aubergine mad apple raw",
+   "expect": "eggplant",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "corn",
+    "sweet corn",
+    "corn kernels",
+    "boiled corn",
+    "frozen corn"
+   ],
+   "query": "corn sweet yellow frozen kernels off cob cooked boiled drained without salt",
+   "expect": "corn, sweet",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "bok choy"
+   ],
+   "query": "bok choy raw",
+   "expect": "bok choy",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "banana",
+    "bananas",
+    "ripe banana",
+    "medium banana"
+   ],
+   "query": "bananas raw",
+   "expect": "bananas",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "apple",
+    "apples",
+    "grated apple",
+    "diced apple",
+    "apple puree"
+   ],
+   "query": "apples raw with skin",
+   "expect": "apples",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "mango",
+    "mangoes",
+    "ripe mango",
+    "mango puree",
+    "alphonso"
+   ],
+   "query": "mangoes raw",
+   "expect": "mango",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "orange",
+    "oranges"
+   ],
+   "query": "oranges raw california",
+   "expect": "oranges",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "orange juice"
+   ],
+   "query": "orange juice canned unsweetened",
+   "expect": "orange juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "pineapple",
+    "pineapple chunks",
+    "pineapple tidbits"
+   ],
+   "query": "pineapple raw white variety",
+   "expect": "pineapple",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "pomegranate seeds",
+    "anardana",
+    "pomegranate arils",
+    "pomegranate"
+   ],
+   "query": "pomegranates raw",
+   "expect": "pomegranate",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "strawberries"
+   ],
+   "query": "strawberries raw",
+   "expect": "strawberries",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "blueberries"
+   ],
+   "query": "blueberries raw",
+   "expect": "blueberries",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "avocado",
+    "avocados",
+    "guacamole",
+    "mashed avocado"
+   ],
+   "query": "avocados raw all commercial varieties",
+   "expect": "avocado",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "lemon juice",
+    "fresh lemon juice",
+    "lemon"
+   ],
+   "query": "lemon juice bottled",
+   "expect": "lemon juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "lime juice",
+    "fresh lime juice",
+    "lime",
+    "juice of 1 lime"
+   ],
+   "query": "lime juice bottled",
+   "expect": "lime juice",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "dates",
+    "date paste",
+    "medjool dates"
+   ],
+   "query": "dates medjool",
+   "expect": "dates",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "figs"
+   ],
+   "query": "figs raw",
+   "expect": "figs",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "applesauce",
+    "unsweetened applesauce"
+   ],
+   "query": "applesauce unsweetened",
+   "expect": "applesauce",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "kiwi",
+    "kiwis"
+   ],
+   "query": "kiwi fruit raw",
+   "expect": "kiwi",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "papaya"
+   ],
+   "query": "papaya raw",
+   "expect": "papaya",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "salt",
+    "fine salt",
+    "sea salt",
+    "table salt",
+    "pink salt",
+    "salt as per taste",
+    "salt to taste"
+   ],
+   "query": "salt table",
+   "expect": "salt, table",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "baking soda",
+    "sodium bicarbonate"
+   ],
+   "query": "leavening agents baking soda",
+   "expect": "baking soda",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "baking powder"
+   ],
+   "query": "leavening agents baking powder",
+   "expect": "baking powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "black pepper",
+    "ground pepper",
+    "pepper powder",
+    "freshly ground black pepper"
+   ],
+   "query": "pepper black",
+   "expect": "pepper, black",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "white pepper"
+   ],
+   "query": "pepper white",
+   "expect": "pepper, white",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cumin powder",
+    "ground cumin",
+    "jeera powder"
+   ],
+   "query": "spices cumin seed ground",
+   "expect": "cumin",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cumin seeds",
+    "jeera",
+    "cumin seed"
+   ],
+   "query": "spices cumin seed",
+   "expect": "cumin seed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "coriander powder",
+    "ground coriander",
+    "dhaniya powder",
+    "coriander seeds"
+   ],
+   "query": "spices coriander seed",
+   "expect": "coriander",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "turmeric powder",
+    "turmeric",
+    "haldi"
+   ],
+   "query": "spices turmeric ground",
+   "expect": "turmeric",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "chili powder",
+    "red chili powder",
+    "chilli powder",
+    "kashmiri chili powder",
+    "kashmiri mirch"
+   ],
+   "query": "spices chili powder",
+   "expect": "chili powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cayenne pepper",
+    "red chili flakes",
+    "chili flakes",
+    "red pepper flakes"
+   ],
+   "query": "pepper cayenne",
+   "expect": "cayenne",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "paprika",
+    "smoked paprika"
+   ],
+   "query": "spices paprika",
+   "expect": "paprika",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "fenugreek seeds",
+    "methi seeds"
+   ],
+   "query": "spices fenugreek seed",
+   "expect": "fenugreek",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "mustard seeds",
+    "rai",
+    "yellow mustard seeds"
+   ],
+   "query": "spices mustard seed ground",
+   "expect": "mustard seed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cinnamon powder",
+    "cinnamon",
+    "dalchini",
+    "cinnamon stick",
+    "cinnamon sticks"
+   ],
+   "query": "spices cinnamon ground",
+   "expect": "cinnamon",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cardamom powder",
+    "green cardamom",
+    "elaichi",
+    "cardamom pods",
+    "cardamom",
+    "black cardamom"
+   ],
+   "query": "spices cardamom",
+   "expect": "cardamom",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cloves",
+    "clove powder",
+    "laung"
+   ],
+   "query": "spices cloves ground",
+   "expect": "cloves",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "bay leaf",
+    "bay leaves",
+    "tej patta"
+   ],
+   "query": "bay leaf",
+   "expect": "bay",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "star anise"
+   ],
+   "query": "star anise",
+   "expect": "anise",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "saffron",
+    "kesar",
+    "kesari"
+   ],
+   "query": "spices saffron",
+   "expect": "saffron",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "curry powder",
+    "sambar powder",
+    "rasam powder",
+    "pav bhaji masala",
+    "italian seasoning",
+    "herbes de provence",
+    "pizza seasoning",
+    "oregano",
+    "dried oregano",
+    "mixed herbs",
+    "mixed spice"
+   ],
+   "query": "curry powder",
+   "expect": "curry powder",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cocoa powder",
+    "unsweetened cocoa",
+    "chocolate powder",
+    "cadbury drinking chocolate"
+   ],
+   "query": "cocoa dry powder unsweetened",
+   "expect": "cocoa",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "dark chocolate",
+    "semi sweet chocolate",
+    "bittersweet chocolate",
+    "chocolate chips",
+    "morsels",
+    "baking chocolate"
+   ],
+   "query": "chocolate semi-sweet baking",
+   "expect": "chocolate",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "white chocolate chips"
+   ],
+   "query": "chocolate chips white baking",
+   "expect": "white",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "vanilla extract",
+    "vanilla essence",
+    "vanilla"
+   ],
+   "query": "vanilla extract",
+   "expect": "vanilla extract",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "vinegar",
+    "white vinegar",
+    "distilled vinegar",
+    "spirit vinegar"
+   ],
+   "query": "vinegar distilled",
+   "expect": "vinegar",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "apple cider vinegar"
+   ],
+   "query": "vinegar cider",
+   "expect": "cider",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "soy sauce",
+    "dark soy sauce",
+    "light soy sauce",
+    "tamari"
+   ],
+   "query": "sauces soy sauce tamari",
+   "expect": "soy sauce",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "rice vinegar"
+   ],
+   "query": "rice vinegar",
+   "expect": "vinegar",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "miso",
+    "miso paste",
+    "white miso"
+   ],
+   "query": "miso",
+   "expect": "miso",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "sriracha",
+    "hot sauce",
+    "tangy hot sauce",
+    "chili garlic sauce",
+    "sambal",
+    "tabasco"
+   ],
+   "query": "sauce peppers hot chili canned",
+   "expect": "sauce|hot",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "salsa"
+   ],
+   "query": "salsa",
+   "expect": "salsa",
+   "dataType": "SR Legacy,Branded"
+  },
+  {
+   "keys": [
+    "mustard",
+    "yellow mustard",
+    "dijon mustard",
+    "mustard paste"
+   ],
+   "query": "mustard prepared yellow",
+   "expect": "mustard",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "mayo",
+    "mayonnaise",
+    "vegan mayo"
+   ],
+   "query": "mayonnaise regular",
+   "expect": "mayonnaise",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "tahini",
+    "sesame paste"
+   ],
+   "query": "sesame butter tahini",
+   "expect": "tahini",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "tamarind",
+    "imli",
+    "tamarind paste",
+    "tamarind water",
+    "imli chutney",
+    "tamarind chutney"
+   ],
+   "query": "tamarind raw",
+   "expect": "tamarind",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "yeast",
+    "active dry yeast",
+    "instant yeast",
+    "dried yeast"
+   ],
+   "query": "yeast active dry or compressed",
+   "expect": "yeast",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "xanthan gum"
+   ],
+   "query": "xanthan gum",
+   "expect": "xanthan gum",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "vital wheat gluten"
+   ],
+   "query": "gluten wheat vital",
+   "expect": "gluten",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "egg",
+    "eggs",
+    "large egg",
+    "egg beaten",
+    "egg, beaten",
+    "egg wash"
+   ],
+   "query": "eggs grade a large raw",
+   "expect": "egg",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "egg whites",
+    "egg white",
+    "whipped egg whites"
+   ],
+   "query": "eggs grade a large egg white",
+   "expect": "egg white",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "egg yolks",
+    "egg yolk"
+   ],
+   "query": "eggs grade a large egg yolk",
+   "expect": "egg yolk",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "corn tortillas",
+    "small street-style corn tortillas",
+    "corn tortilla"
+   ],
+   "query": "tortilla corn",
+   "expect": "tortilla|corn",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "flour tortillas",
+    "tortilla wraps",
+    "tortillas",
+    "wraps",
+    "tortillas 10 inch",
+    "large flour tortillas"
+   ],
+   "query": "tortilla wheat flour",
+   "expect": "tortilla|wheat",
+   "dataType": "Foundation,SR Legacy"
+  },
+  {
+   "keys": [
+    "whole wheat bread",
+    "brown bread",
+    "multigrain bread",
+    "whole wheat roti",
+    "roti",
+    "chapati"
+   ],
+   "query": "bread whole-wheat toasted",
+   "expect": "whole-wheat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "white bread",
+    "sandwich bread",
+    "bread slices",
+    "toast",
+    "sourdough bread",
+    "bread slices 1-inch thick",
+    "bread"
+   ],
+   "query": "bread white commercially prepared toasted",
+   "expect": "white",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "naan",
+    "pita bread",
+    "flatbread",
+    "pita"
+   ],
+   "query": "bread pita",
+   "expect": "pita",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "sabudana",
+    "tapioca pearls",
+    "sago",
+    "tapioca starch",
+    "tapioca flour"
+   ],
+   "query": "tapioca pearled raw",
+   "expect": "tapioca",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "puffed rice",
+    "murmura",
+    "puffed cereal"
+   ],
+   "query": "cereals rice puffed",
+   "expect": "puffed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "spaghetti, cooked",
+    "macaroni, cooked",
+    "penne, cooked",
+    "fettuccine, cooked",
+    "cooked spaghetti",
+    "cooked macaroni"
+   ],
+   "query": "spaghetti cooked",
+   "expect": "spaghetti",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "rice noodles",
+    "dried rice noodles",
+    "rice vermicelli"
+   ],
+   "query": "rice noodles dry",
+   "expect": "rice noodles, dry",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "seitan",
+    "wheat meat"
+   ],
+   "query": "seitan wheat protein",
+   "expect": "seitan",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "mixed vegetables",
+    "diced veggies",
+    "veg mix",
+    "mixed frozen vegetables",
+    "mixed veggies",
+    "frozen mixed vegetables"
+   ],
+   "query": "vegetables mixed frozen cooked boiled drained without salt",
+   "expect": "vegetables, mixed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "milk powder",
+    "skimmed milk powder",
+    "dry milk",
+    "milk solids without sugar"
+   ],
+   "query": "milk fortified dry instant nonfat",
+   "expect": "dry, instant",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "khoya",
+    "mawa"
+   ],
+   "query": "milk solids",
+   "expect": "milk",
+   "dataType": "SR Legacy,Branded"
+  },
+  {
+   "keys": [
+    "buttermilk",
+    "chaas"
+   ],
+   "query": "buttermilk fluid cultured whole",
+   "expect": "buttermilk",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "soy milk",
+    "soymilk"
+   ],
+   "query": "soymilk all flavors unsweetened with added calcium retail",
+   "expect": "soymilk",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "almond milk"
+   ],
+   "query": "beverages almond milk unsweetened original",
+   "expect": "almond milk",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "oat milk",
+    "oatmilk"
+   ],
+   "query": "beverages oat milk unsweetened original",
+   "expect": "oat",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "coconut water"
+   ],
+   "query": "coconut water or juice",
+   "expect": "coconut",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "maple syrup"
+   ],
+   "query": "maple syrup",
+   "expect": "maple syrup",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "agave syrup",
+    "agave nectar"
+   ],
+   "query": "agave nectar or syrup",
+   "expect": "agave",
+   "dataType": "SR Legacy,Branded"
+  },
+  {
+   "keys": [
+    "molasses",
+    "blackstrap molasses"
+   ],
+   "query": "molasses blackstrap",
+   "expect": "molasses",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "sweetened condensed milk"
+   ],
+   "query": "milk canned condensed sweetened",
+   "expect": "condensed",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "sesame seeds",
+    "black sesame seeds",
+    "til"
+   ],
+   "query": "sesame seeds",
+   "expect": "sesame seeds",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "poppy seeds",
+    "khus khus"
+   ],
+   "query": "poppy seed",
+   "expect": "poppy",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "nigella seeds",
+    "kalonji",
+    "black onion seeds",
+    "onion nigella sativa"
+   ],
+   "query": "nigella sativa black seeds",
+   "expect": "nigella|sativa",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "carom seeds",
+    "ajwain"
+   ],
+   "query": "ajwain seed",
+   "expect": "ajwain",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "fennel seeds",
+    "saunf"
+   ],
+   "query": "spices fennel seed",
+   "expect": "fennel",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "hemp seeds",
+    "hemp hearts"
+   ],
+   "query": "hemp seed",
+   "expect": "hemp",
+   "dataType": "SR Legacy,Foundation"
+  },
+  {
+   "keys": [
+    "macadamia nuts"
+   ],
+   "query": "macadamia nuts raw",
+   "expect": "macadamia",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "pecans"
+   ],
+   "query": "pecans raw halves",
+   "expect": "pecans",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "walnuts"
+   ],
+   "query": "walnuts raw english",
+   "expect": "walnuts",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "hazelnuts",
+    "filberts"
+   ],
+   "query": "filberts hazelnuts peanuts",
+   "expect": "filberts|hazelnuts",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "pine nuts"
+   ],
+   "query": "pine nuts pignoli",
+   "expect": "pine nuts",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "dried apricots"
+   ],
+   "query": "apricots dried un sulfured",
+   "expect": "apricots",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "dried figs"
+   ],
+   "query": "figs dried un sulfured",
+   "expect": "figs",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "prunes",
+    "dried plums"
+   ],
+   "query": "prunes dried plums",
+   "expect": "prunes",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "soured cream",
+    "sour cream"
+   ],
+   "query": "sour cream",
+   "expect": "sour cream",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cottage cheese",
+    "paneer alternative",
+    "quark",
+    "farmer cheese"
+   ],
+   "query": "cheese cottage lowfat or fat free",
+   "expect": "cottage",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "feta cheese"
+   ],
+   "query": "cheese feta",
+   "expect": "feta",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "ricotta cheese"
+   ],
+   "query": "cheese ricotta whole milk",
+   "expect": "ricotta",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "goat cheese",
+    "chevre"
+   ],
+   "query": "cheese goat soft type",
+   "expect": "goat",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "swiss cheese",
+    "emmental"
+   ],
+   "query": "cheese swiss",
+   "expect": "swiss",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "gouda cheese"
+   ],
+   "query": "cheese gouda",
+   "expect": "gouda",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "brie cheese"
+   ],
+   "query": "cheese brie",
+   "expect": "brie",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "cream of tartar"
+   ],
+   "query": "cream of tartar",
+   "expect": "tartar",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "gelatin",
+    "gelatin powder"
+   ],
+   "query": "gelatin desserts dry mix",
+   "expect": "gelatin",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "agar agar",
+    "agar"
+   ],
+   "query": "agar-agar",
+   "expect": "agar",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "corn starch",
+    "maizena"
+   ],
+   "query": "arrowroot raw",
+   "expect": "arrowroot",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "salted cashews",
+    "salted peanuts",
+    "roasted salted nuts"
+   ],
+   "query": "snacks salted peanuts",
+   "expect": "peanuts",
+   "dataType": "Branded"
+  },
+  {
+   "keys": [
+    "cornmeal",
+    "makki ka atta",
+    "corn meal",
+    "corn flour yellow",
+    "corn flour"
+   ],
+   "query": "cornmeal white or yellow whole ground",
+   "expect": "corn",
+   "dataType": "SR Legacy"
+  },
+  {
+   "keys": [
+    "chow mein noodles",
+    "hakka noodles",
+    "chinese noodles"
+   ],
+   "query": "noodles chinese chow mein",
+   "expect": "chow mein",
+   "dataType": "SR Legacy"
+  }
+ ]
+}

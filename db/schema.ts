@@ -907,6 +907,29 @@ export const fdcCache = pgTable('fdc_cache', {
   fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * ADR-125: curated ingredient-name → pinned USDA record map, shipped by
+ * migration like the starter library — shared, `household_id`-less, so PV03
+ * never has to reach it and one pass fixes every household at once.
+ * `per_100g` uses the nutrient names of `nutrition/fdc.ts`; `unit_grams` maps
+ * the parser's canonical units (cup/tbsp/tsp/clove/slice/stick/can/piece) to
+ * grams per ONE unit, taken from USDA's own `foodPortions` — never estimated.
+ * A food USDA gives no portion for simply has no entry there, and its lines
+ * stay `unweighed`. `reviewed` stays false until the dietitian pass lands
+ * (ADR-125); the planner does not consult it, the dietitian review report does.
+ */
+export const fdcAlias = pgTable('fdc_alias', {
+  foodKey: text('food_key').primaryKey(),
+  fdcId: text('fdc_id').notNull(),
+  description: text('description').notNull(),
+  dataType: text('data_type').notNull(),
+  per100g: jsonb('per_100g').$type<Record<string, number>>().notNull(),
+  unitGrams: jsonb('unit_grams').$type<Record<string, number>>().notNull().default(sql`'{}'::jsonb`),
+  sourceNote: text('source_note').notNull(),
+  reviewed: boolean('reviewed').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Simple no-recipe foods (fruit, yogurt, toast) usable directly in slots. */
 
 export const foodItem = pgTable(
@@ -1687,6 +1710,7 @@ export const schema = {
 
   foodItem,
   fdcCache,
+  fdcAlias,
 
   allergenConfirmation,
 

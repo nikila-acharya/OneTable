@@ -7,6 +7,7 @@ import { fdcCache, recipe, recipeIngredient, recipeNutrients } from "../../../db
 import type { Db } from "../db";
 import { parseIngredientLine } from "./ingredient-line";
 import { chooseMatch, type FdcFood } from "./fdc";
+import { aliasMatch, gramsFromAlias, lookupAlias } from "./aliases";
 import { rollUp, type LineMatch, type RollUp } from "./rollup";
 import { RecipeNotFoundError } from "../recipes/review";
 
@@ -37,16 +38,22 @@ export async function mapRecipeNutrition(db: Db, client: FoodSearch, householdId
   const lines: LineMatch[] = [];
   for (const row of rows) {
     const parsed = parseIngredientLine(row.rawText);
-    const foods = parsed.food ? await searchCached(db, client, parsed.food) : [];
-    const match = parsed.food ? chooseMatch(parsed.food, foods) : null;
-    lines.push({ line: parsed, match });
+    // ADR-125: the curated alias table is consulted first. A hit replaces the
+    // fuzzy match (it is pinned, not guessed) and can supply grams from USDA's
+    // own foodPortions when the line's volume/count unit left grams null.
+    const alias = await lookupAlias(db, parsed.food);
+    const foods = !alias && parsed.food ? await searchCached(db, client, parsed.food) : [];
+    const match = alias ? aliasMatch(alias) : parsed.food ? chooseMatch(parsed.food, foods) : null;
+    const aliasGrams = alias ? gramsFromAlias(parsed, alias) : null;
+    const line = aliasGrams === null ? parsed : { ...parsed, grams: aliasGrams, gramsSource: "alias_density" as const };
+    lines.push({ line, match });
     await db
       .update(recipeIngredient)
       .set({
-        qty: parsed.qty === null ? null : String(parsed.qty),
-        unit: parsed.unit,
-        food: parsed.food || null,
-        grams: parsed.grams === null ? null : String(parsed.grams),
+        qty: line.qty === null ? null : String(line.qty),
+        unit: line.unit,
+        food: line.food || null,
+        grams: line.grams === null ? null : String(line.grams),
         fdcId: match ? String(match.fdcId) : null,
         matchConf: match ? match.confidence : null,
       })
