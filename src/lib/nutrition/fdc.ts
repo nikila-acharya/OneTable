@@ -58,7 +58,14 @@ export function createFdcClient(opts: { apiKey: string; fetchImpl?: FetchLike; b
   const base = opts.baseUrl ?? FDC_BASE;
   return {
     async search(query: string): Promise<FdcFood[]> {
-      const url = `${base}/foods/search?query=${encodeURIComponent(query)}&pageSize=10&dataType=${encodeURIComponent("Foundation,SR Legacy,Branded")}`;
+      // FDC answers HTTP 400 for queries containing "/" (a real production
+      // line — "2 sized purple brinjal / baingan / eggplant" — aborted the
+      // whole recipe's enrichment, 2026-11-24 intake). Slashes and operator
+      // punctuation are not meaningful in a food-name search; normalise them
+      // to spaces before requesting.
+      const clean = query.replace(/[/\\&|:!()\[\]{}]+/g, " ").replace(/\s+/g, " ").trim();
+      if (!clean) return [];
+      const url = `${base}/foods/search?query=${encodeURIComponent(clean)}&pageSize=10&dataType=${encodeURIComponent("Foundation,SR Legacy,Branded")}`;
       const res = await f(url, { headers: { "X-Api-Key": opts.apiKey } });
       if (!res.ok) throw new Error(`fdc http ${res.status}`);
       const body = (await res.json()) as { foods?: FdcFood[] };

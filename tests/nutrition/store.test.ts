@@ -80,6 +80,27 @@ describe.skipIf(!hasDb)("recipe nutrition mapping (live DB)", () => {
     expect(calls).toEqual([]); // dragonfruit answered from fdc_cache, aliases never needed the network
   });
 
+  it("one failing FDC lookup zeroes nothing: the line reports unmatched, aliases still weigh (production 2026-11-24)", async () => {
+    const hid = await newHousehold();
+    const rid = await saveParsedRecipe(db, hid, {
+      fields: { ...FIELDS, title: "Hardened Bowl", ingredients: ["2 sized purple brinjal / baingan / eggplant", "1 cup cooked rice", "300 g mystery slime"] },
+      confidence: {}, unsure: [], sourceUrl: "https://blog.example.test/hard", parseMethod: "markup",
+    });
+    const client = {
+      async search(q: string): Promise<FdcFood[]> {
+        if (q.includes("mystery")) throw new Error("fdc http 400"); // what the old code turned into a dead recipe
+        return [];
+      },
+    };
+    const roll = await mapRecipeNutrition(db, client, hid, rid, 2);
+    expect(roll.fdcFailures).toEqual(["mystery slime"]);
+    expect(roll.unmatched).toContain("2 sized purple brinjal / baingan / eggplant");
+    expect(roll.perServing.kcal).toBeGreaterThan(0); // the alias line carried the recipe
+    const rows = await db.select().from(recipeIngredient).where(eq(recipeIngredient.recipeId, rid));
+    expect(Number(rows.find((r) => r.rawText === "1 cup cooked rice")!.grams)).toBe(158);
+    expect(rows.find((r) => r.rawText.includes("mystery"))!.fdcId).toBeNull(); // grams parsed, but no food matched after the failed lookup
+  });
+
   it("another household cannot map the recipe", async () => {
     const mine = await newHousehold();
     const theirs = await newHousehold();
