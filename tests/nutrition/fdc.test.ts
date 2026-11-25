@@ -49,4 +49,14 @@ describe("FDC client", () => {
     const c = createFdcClient({ apiKey: "k", fetchImpl: fakeFetch });
     await expect(c.search("onion")).rejects.toThrow(/fdc http 429/);
   });
+  it("normalises slashes/operator punctuation (FDC 400s on them) and never sends a blank query", async () => {
+    const urls: string[] = [];
+    const fakeFetch = (async (url: string) => { urls.push(String(url)); return new Response(JSON.stringify({ foods: [] }), { status: 200 }); }) as unknown as typeof fetch;
+    const c = createFdcClient({ apiKey: "test-key-not-real", fetchImpl: fakeFetch });
+    await c.search("sized purple brinjal / baingan / eggplant"); // real production line, ADR-125 intake
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain("query=sized%20purple%20brinjal%20baingan%20eggplant");
+    await c.search("/ | & ");
+    expect(urls).toHaveLength(1); // sanitises to nothing: no request, empty result
+  });
 });

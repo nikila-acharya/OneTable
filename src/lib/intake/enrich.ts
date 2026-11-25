@@ -31,8 +31,8 @@ export interface EnrichResult {
   tags: string[];
   dietTags: string[];
   nutrition:
-    | { status: "mapped"; kcal: number; completeness: number; matchedLines: number }
-    | { status: "unavailable"; reason: string; matchedLines?: number }
+    | { status: "mapped"; kcal: number; completeness: number; matchedLines: number; fdcFailures?: string[] }
+    | { status: "unavailable"; reason: string; matchedLines?: number; fdcFailures?: string[] }
     | { status: "skipped"; reason: "no_fdc_key" };
 }
 
@@ -86,13 +86,17 @@ export async function enrichRecipe(
     try {
       const roll = await mapRecipeNutrition(db, opts.fdc, householdId, recipeId, row.yieldServings ?? 4);
       const kcal = Number(roll.perServing.kcal ?? 0);
+      const failures = roll.fdcFailures.slice(0, 5);
       nutrition =
         kcal > 0
-          ? { status: "mapped", kcal, completeness: roll.completeness, matchedLines: roll.matchedLines }
+          ? { status: "mapped", kcal, completeness: roll.completeness, matchedLines: roll.matchedLines, ...(failures.length ? { fdcFailures: failures } : {}) }
           : {
               status: "unavailable",
-              reason: "no ingredient line matched a food with energy data",
+              reason: failures.length
+                ? `no ingredient line matched a food with energy data (${failures.length} FDC lookups failed)`
+                : "no ingredient line matched a food with energy data",
               matchedLines: roll.matchedLines,
+              ...(failures.length ? { fdcFailures: failures } : {}),
             };
     } catch (e) {
       // Network/limit failures are reported, not swallowed: an importer that

@@ -30,19 +30,24 @@ export async function searchCached(db: Db, client: FoodSearch, query: string): P
   return foods;
 }
 
-export async function mapRecipeNutrition(db: Db, client: FoodSearch, householdId: string, recipeId: string, servings: number): Promise<RollUp & { matchedLines: number }> {
+export async function mapRecipeNutrition(db: Db, client: FoodSearch, householdId: string, recipeId: string, servings: number): Promise<RollUp & { matchedLines: number; fdcFailures: string[] }> {
   const [r] = await db.select({ id: recipe.id }).from(recipe).where(and(eq(recipe.id, recipeId), eq(recipe.householdId, householdId)));
   if (!r) throw new RecipeNotFoundError();
   const rows = await db.select().from(recipeIngredient).where(eq(recipeIngredient.recipeId, recipeId)).orderBy(asc(recipeIngredient.position));
 
   const lines: LineMatch[] = [];
+  const fdcFailures: string[] = [];
   for (const row of rows) {
     const parsed = parseIngredientLine(row.rawText);
     // ADR-125: the curated alias table is consulted first. A hit replaces the
     // fuzzy match (it is pinned, not guessed) and can supply grams from USDA's
     // own foodPortions when the line's volume/count unit left grams null.
     const alias = await lookupAlias(db, parsed.food);
-    const foods = !alias && parsed.food ? await searchCached(db, client, parsed.food) : [];
+    // One bad network answer must not abort the recipe: the line reports
+    // unmatched (and is listed in fdcFailures) while every other line, and the
+    // whole roll-up, still gets its nutrition. (Production intake 2026-11-24:
+    // a single FDC 400 zeroed a 44-line recipe.)
+    const foods = !alias && parsed.food ? await searchCached(db, client, parsed.food).catch(() => { fdcFailures.push(parsed.food); return []; }) : [];
     const match = alias ? aliasMatch(alias) : parsed.food ? chooseMatch(parsed.food, foods) : null;
     const aliasGrams = alias ? gramsFromAlias(parsed, alias) : null;
     const line = aliasGrams === null ? parsed : { ...parsed, grams: aliasGrams, gramsSource: "alias_density" as const };
@@ -65,5 +70,5 @@ export async function mapRecipeNutrition(db: Db, client: FoodSearch, householdId
     .insert(recipeNutrients)
     .values({ recipeId, perServing: result.perServing, completeness: result.completeness })
     .onConflictDoUpdate({ target: recipeNutrients.recipeId, set: { perServing: result.perServing, completeness: result.completeness } });
-  return { ...result, matchedLines: lines.filter((l) => l.match).length };
+  return { ...result, matchedLines: lines.filter((l) => l.match).length, fdcFailures };
 }
