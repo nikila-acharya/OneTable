@@ -10,7 +10,8 @@ export interface ParsedIngredient {
   unit: string | null;
   food: string;
   grams: number | null;
-  gramsSource: "line" | "mass_unit" | null;
+  /** `alias_density` is set by the enrichment layer (ADR-125), never by the parser itself. */
+  gramsSource: "line" | "mass_unit" | "alias_density" | null;
 }
 
 const UNITS: Record<string, string> = {
@@ -30,7 +31,7 @@ const UNITS: Record<string, string> = {
 const MASS_TO_G: Record<string, number> = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
 const FRACTIONS: Record<string, number> = { "\u00BD": 0.5, "\u2153": 1 / 3, "\u2154": 2 / 3, "\u00BC": 0.25, "\u00BE": 0.75, "\u215B": 0.125 };
 
-/** Reads "3", "1/2", "3 1/3", "3½", "½". Returns null when no leading quantity. */
+/** Reads "3", "1/2", "3 1/3", "3½", "½", "3-4" (ranges take the lower bound — a blog range is "about", and the low number is the honest floor). */
 function leadingQuantity(s: string): { qty: number; rest: string } | null {
   const t = s.trim();
   for (const [g, v] of Object.entries(FRACTIONS)) {
@@ -41,6 +42,8 @@ function leadingQuantity(s: string): { qty: number; rest: string } | null {
   if (mixed) return { qty: Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]), rest: t.slice(mixed[0].length).trim() };
   const frac = /^(\d+)\/(\d+)\b/.exec(t);
   if (frac && Number(frac[2]) !== 0) return { qty: Number(frac[1]) / Number(frac[2]), rest: t.slice(frac[0].length).trim() };
+  const range = /^(\d+(?:[.,]\d+)?)\s*[-–]\s*\d+(?:\.\d+)?\b/.exec(t);
+  if (range) return { qty: Number(range[1].replace(",", ".")), rest: t.slice(range[0].length).trim() };
   const num = /^(\d+(?:[.,]\d+)?)\b/.exec(t);
   if (num) return { qty: Number(num[1].replace(",", ".")), rest: t.slice(num[0].length).trim() };
   return null;
@@ -48,7 +51,11 @@ function leadingQuantity(s: string): { qty: number; rest: string } | null {
 
 export function parseIngredientLine(raw: string): ParsedIngredient {
   const rawText = raw.replace(/\s+/g, " ").trim();
-  let text = rawText;
+  // Blogs list ingredients with markdown/plain-text bullets ("– 1 tbsp ghee",
+  // "* 3-4 scallions"). Without this the leading dash kills quantity parsing
+  // and the whole line degrades into a food string (production gap profile
+  // 2026-11-24). Negatives never occur in ingredient lines.
+  let text = rawText.replace(/^[-–—*•]+\s*/, "");
 
   // explicit gram weight in parentheses or after the line, e.g. "(480 g)", "(120g)", "((480 g))"
   let grams: number | null = null;
@@ -63,6 +70,9 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
   const q = leadingQuantity(text);
   const qty: number | null = q ? q.qty : null;
   let rest = q ? q.rest : text;
+  // a fraction followed by a range ("½-1 tbsp crushed kasuri methi") leaves the
+  // range tail behind; drop it the same way the numeric path does.
+  if (q) rest = rest.replace(/^[-–]\s*\d+(?:\s*\/\s*\d+)?\s*/, "").trim();
 
   let unit: string | null = null;
   const um = /^([A-Za-z\u00C0-\u017F.]+)\b\.?\s*/.exec(rest);
@@ -73,8 +83,18 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
       rest = rest.slice(um[0].length).trim();
     }
   }
-  // "de" in Spanish: "3 tazas de harina" -> "harina"
-  rest = rest.replace(/^de\s+/i, "");
+  // size descriptors are counts: "1 medium onion" -> qty 1, unit piece, food onion.
+  // Without this the descriptor stays inside the food name and the alias lookup
+  // misses "onion" (production gap profile, ADR-125).
+  if (unit === null && qty !== null) {
+    const dm = /^(small|medium|med|large|lg|big)\s+(?=[a-z\u00C0-\u017F])/.exec(rest);
+    if (dm) {
+      unit = "piece";
+      rest = rest.slice(dm[0].length).trim();
+    }
+  }
+  // "de" in Spanish: "3 tazas de harina" -> "harina"; "of" in English: "2 cups of milk"
+  rest = rest.replace(/^de\s+/i, "").replace(/^of\s+/i, "");
 
   // trailing notes after a comma are preparation notes, not the food
   let food = rest.split(",")[0]!.replace(/\b(optional|to taste|or more if needed|more if needed|divided)\b/gi, "").replace(/\s+/g, " ").trim();

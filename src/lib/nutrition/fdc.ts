@@ -18,6 +18,24 @@ export const NUTRIENT_NUMBERS = {
   sodium: "307",
 } as const;
 
+/**
+ * Alternate nutrient ids per field. FDC renumbered its nutrients when the
+ * Foundation set moved to the SR28 id space (energy 208 -> 1008; some records
+ * still report Atwater factors as 957/958). The runtime used to extract only
+ * the legacy ids, which silently produced "matched but no energy" — part of
+ * why cup-heavy imports landed in no_nutrients (ADR-125 production profile).
+ */
+export const NUTRIENT_IDS: Record<keyof typeof NUTRIENT_NUMBERS, string[]> = {
+  energyKcal: ["208", "1008", "957"],
+  protein: ["203", "1003"],
+  fat: ["204", "1004"],
+  saturatedFat: ["606", "1094"],
+  carbs: ["205", "1005"],
+  fiber: ["291", "1079"],
+  sugarTotal: ["269", "1082"],
+  sodium: ["307", "1093"],
+};
+
 export interface FdcFood {
   fdcId: number;
   description: string;
@@ -68,9 +86,11 @@ export function chooseMatch(food: string, candidates: FdcFood[]): FdcMatch | nul
     const conf = Math.round(score * 100) / 100;
     if (!best || conf > best.confidence) {
       const per100g: FdcMatch["per100g"] = {};
-      for (const [name, num] of Object.entries(NUTRIENT_NUMBERS)) {
-        const n = c.foodNutrients?.find((x) => x.nutrientNumber === num);
-        if (n && typeof n.value === "number") per100g[name as keyof typeof NUTRIENT_NUMBERS] = n.value;
+      for (const name of Object.keys(NUTRIENT_IDS) as (keyof typeof NUTRIENT_NUMBERS)[]) {
+        for (const num of NUTRIENT_IDS[name]) {
+          const n = c.foodNutrients?.find((x) => x.nutrientNumber === num);
+          if (n && typeof n.value === "number") { per100g[name] = n.value; break; }
+        }
       }
       best = { fdcId: c.fdcId, description: c.description, dataType: c.dataType, confidence: conf, per100g };
     }
