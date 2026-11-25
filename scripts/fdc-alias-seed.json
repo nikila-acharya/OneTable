@@ -13,7 +13,8 @@
   "Ambiguous bare names ('rice' alone) are aliased only where raw/cooked is derivable",
   "from the record choice and said in source_note. Foods FDC genuinely lacks (garam",
   "masala, kasuri methi, curry leaves, black salt, hing, idli/dosa batter) are absent",
-  "on purpose. Dietitian pass pending: every row ships reviewed=false."
+  "on purpose. Dietitian pass pending: every row ships reviewed=false.",
+  "RD review 2026-11-25: wheat flour moved to all-purpose; whole-wheat->Flour whole wheat 790085; milk powder->171272; kiwi->168153; khoya/mawa dropped (no USDA record). Fixes applied as migration 0010."
  ],
  "targets": [
   {
@@ -99,7 +100,8 @@
     "all purpose flour",
     "plain flour",
     "maida",
-    "flour"
+    "flour",
+    "wheat flour"
    ],
    "query": "flour wheat all-purpose enriched unbleached",
    "expect": "all-purpose",
@@ -109,12 +111,11 @@
    "keys": [
     "whole wheat flour",
     "atta",
-    "chapati flour",
-    "wheat flour"
+    "chapati flour"
    ],
-   "query": "flour whole wheat",
-   "expect": "whole wheat",
-   "dataType": "SR Legacy"
+   "query": "flour whole wheat unenriched",
+   "expect": "flour, whole wheat",
+   "dataType": "Foundation,SR Legacy"
   },
   {
    "keys": [
@@ -1144,9 +1145,9 @@
     "kiwi",
     "kiwis"
    ],
-   "query": "kiwi fruit raw",
-   "expect": "kiwi",
-   "dataType": "SR Legacy"
+   "query": "kiwifruit green raw",
+   "expect": "kiwifruit",
+   "dataType": "SR Legacy,Foundation"
   },
   {
    "keys": [
@@ -1727,18 +1728,9 @@
     "dry milk",
     "milk solids without sugar"
    ],
-   "query": "milk fortified dry instant nonfat",
-   "expect": "dry, instant",
+   "query": "milk dry nonfat instant added vitamin",
+   "expect": "dry, nonfat",
    "dataType": "SR Legacy"
-  },
-  {
-   "keys": [
-    "khoya",
-    "mawa"
-   ],
-   "query": "milk solids",
-   "expect": "milk",
-   "dataType": "SR Legacy,Branded"
   },
   {
    "keys": [

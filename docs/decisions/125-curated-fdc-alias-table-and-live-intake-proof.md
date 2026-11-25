@@ -103,3 +103,31 @@ What production showed:
   fixture now proves alias-preference + density + cache-fallback in one run, and
   the intake household `hermes-verify-intake-mwv6sct9` waits in production for
   the post-deploy before/after measurement, then deletion on the owner's word.
+
+## Addendum — RD review sheet outcome (2026-11-25, migration 0010)
+
+The review sheet (203 pinned records / 610 keys) was returned marked "ok",
+initials "nk", dated 2026-11-25 on every row. Cross-checking the sheet against
+the records before acting on it found four genuine mispins that the sweep had
+missed — proof the machine-side check earns its keep even under a clean sheet:
+
+* `wheat flour / atta / chapati flour / whole wheat flour` → **Crackers,
+  whole-wheat** (a cracker record, with cracker cup weights, answering flour);
+* `milk powder / dry milk / skimmed milk powder` → a **babyfood rice cereal**
+  record (its description contains "dry, instant");
+* `kiwi / kiwis` → **Kiwi-strawberry juice drink**;
+* `khoya / mawa` → **1% fluid milk** (≈8× energy understatement against milk
+  solids).
+
+Migration `0010_rd_alias_fixes` repins the first three groups to
+SR/Foundation records fetched live (flour 790085 — no USDA portions, so atta
+cups honestly stay unweighed; all-purpose 168936 for the bare "wheat flour"
+US-blog sense; dry milk 171272; kiwifruit 168153) and **removes** khoya/mawa,
+since FDC has no milk-solids record. `scripts/fdc-alias-seed.json` and
+`fdc-alias-pins.json` were updated to match, so a future full rebuild lands on
+the same final state; 0009 itself was not rewritten (already applied
+everywhere — patched forward instead, per the ADR-123 journal pitfall).
+
+`reviewed` was NOT flipped by this sheet: every row still says `false`, because
+the signature's provenance (owner self-review vs dietitian) is unconfirmed, and
+this column exists exactly to distinguish the two. See STATUS §Blocked.

@@ -470,80 +470,68 @@
   "sourceNote": "USDA FDC #168936 \"Wheat flour, white, all-purpose, enriched, unbleached\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
  },
  "whole wheat flour": {
-  "fdcId": "172749",
-  "description": "Crackers, whole-wheat",
-  "dataType": "SR Legacy",
+  "fdcId": "790085",
+  "description": "Flour, whole wheat, unenriched",
+  "dataType": "Foundation",
   "per100g": {
-   "energyKcal": 427,
-   "protein": 10.6,
-   "fat": 14.1,
-   "saturatedFat": 2.06,
-   "carbs": 69.6,
-   "fiber": 10.3,
-   "sugarTotal": 1.19,
-   "sodium": 800
+   "energyKcal": 370,
+   "protein": 15.1,
+   "fat": 2.73,
+   "carbs": 71.2,
+   "fiber": 10.6,
+   "sodium": 3
   },
-  "unitGrams": {
-   "cup": 94
-  },
-  "sourceNote": "USDA FDC #172749 \"Crackers, whole-wheat\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {},
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was whole wheat flour→old record"
  },
  "atta": {
-  "fdcId": "172749",
-  "description": "Crackers, whole-wheat",
-  "dataType": "SR Legacy",
+  "fdcId": "790085",
+  "description": "Flour, whole wheat, unenriched",
+  "dataType": "Foundation",
   "per100g": {
-   "energyKcal": 427,
-   "protein": 10.6,
-   "fat": 14.1,
-   "saturatedFat": 2.06,
-   "carbs": 69.6,
-   "fiber": 10.3,
-   "sugarTotal": 1.19,
-   "sodium": 800
+   "energyKcal": 370,
+   "protein": 15.1,
+   "fat": 2.73,
+   "carbs": 71.2,
+   "fiber": 10.6,
+   "sodium": 3
   },
-  "unitGrams": {
-   "cup": 94
-  },
-  "sourceNote": "USDA FDC #172749 \"Crackers, whole-wheat\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {},
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was whole wheat flour→old record"
  },
  "chapati flour": {
-  "fdcId": "172749",
-  "description": "Crackers, whole-wheat",
-  "dataType": "SR Legacy",
+  "fdcId": "790085",
+  "description": "Flour, whole wheat, unenriched",
+  "dataType": "Foundation",
   "per100g": {
-   "energyKcal": 427,
-   "protein": 10.6,
-   "fat": 14.1,
-   "saturatedFat": 2.06,
-   "carbs": 69.6,
-   "fiber": 10.3,
-   "sugarTotal": 1.19,
-   "sodium": 800
+   "energyKcal": 370,
+   "protein": 15.1,
+   "fat": 2.73,
+   "carbs": 71.2,
+   "fiber": 10.6,
+   "sodium": 3
   },
-  "unitGrams": {
-   "cup": 94
-  },
-  "sourceNote": "USDA FDC #172749 \"Crackers, whole-wheat\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {},
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was whole wheat flour→old record"
  },
  "wheat flour": {
-  "fdcId": "172749",
-  "description": "Crackers, whole-wheat",
+  "fdcId": "168936",
+  "description": "Wheat flour, white, all-purpose, enriched, unbleached",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 427,
-   "protein": 10.6,
-   "fat": 14.1,
-   "saturatedFat": 2.06,
-   "carbs": 69.6,
-   "fiber": 10.3,
-   "sugarTotal": 1.19,
-   "sodium": 800
+   "energyKcal": 364,
+   "protein": 10.3,
+   "fat": 0.98,
+   "saturatedFat": 0.155,
+   "carbs": 76.3,
+   "fiber": 2.7,
+   "sugarTotal": 0.27,
+   "sodium": 2
   },
   "unitGrams": {
-   "cup": 94
+   "cup": 125
   },
-  "sourceNote": "USDA FDC #172749 \"Crackers, whole-wheat\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was wheat flour→old record"
  },
  "gram flour": {
   "fdcId": "174288",
@@ -6358,38 +6346,42 @@
   "sourceNote": "USDA FDC #167772 \"Applesauce, canned, unsweetened, with added ascorbic acid\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
  },
  "kiwi": {
-  "fdcId": "174111",
-  "description": "Beverages, Kiwi Strawberry Juice Drink",
+  "fdcId": "168153",
+  "description": "Kiwifruit, green, raw",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 47,
-   "protein": 0,
-   "fat": 0,
-   "saturatedFat": 0,
-   "carbs": 12.3,
-   "fiber": 0,
-   "sugarTotal": 11.6,
-   "sodium": 11
+   "energyKcal": 61,
+   "protein": 1.14,
+   "fat": 0.52,
+   "saturatedFat": 0.029,
+   "carbs": 14.7,
+   "fiber": 3,
+   "sugarTotal": 8.99,
+   "sodium": 3
   },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #174111 \"Beverages, Kiwi Strawberry Juice Drink\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {
+   "cup": 180
+  },
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was kiwi→old record"
  },
  "kiwis": {
-  "fdcId": "174111",
-  "description": "Beverages, Kiwi Strawberry Juice Drink",
+  "fdcId": "168153",
+  "description": "Kiwifruit, green, raw",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 47,
-   "protein": 0,
-   "fat": 0,
-   "saturatedFat": 0,
-   "carbs": 12.3,
-   "fiber": 0,
-   "sugarTotal": 11.6,
-   "sodium": 11
+   "energyKcal": 61,
+   "protein": 1.14,
+   "fat": 0.52,
+   "saturatedFat": 0.029,
+   "carbs": 14.7,
+   "fiber": 3,
+   "sugarTotal": 8.99,
+   "sodium": 3
   },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #174111 \"Beverages, Kiwi Strawberry Juice Drink\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {
+   "cup": 180
+  },
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was kiwi→old record"
  },
  "papaya": {
   "fdcId": "169926",
@@ -10035,108 +10027,80 @@
   "sourceNote": "USDA FDC #170472 \"Vegetables, mixed, frozen, cooked, boiled, drained, without salt\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
  },
  "milk powder": {
-  "fdcId": "167731",
-  "description": "Babyfood, cereal, rice with pears and apple, dry, instant fortified",
+  "fdcId": "171272",
+  "description": "Milk, dry, nonfat, instant, with added vitamin A and vitamin D",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 389,
-   "protein": 6.6,
-   "fat": 0.9,
-   "saturatedFat": 0.185,
-   "carbs": 88.5,
-   "fiber": 2.6,
-   "sugarTotal": 1.35,
-   "sodium": 2
+   "energyKcal": 358,
+   "protein": 35.1,
+   "fat": 0.72,
+   "saturatedFat": 0.467,
+   "carbs": 52.2,
+   "fiber": 0,
+   "sugarTotal": 52.2,
+   "sodium": 549
   },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #167731 \"Babyfood, cereal, rice with pears and apple, dry, instant fortified\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {
+   "cup": 69.7
+  },
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was milk powder→old record"
  },
  "skimmed milk powder": {
-  "fdcId": "167731",
-  "description": "Babyfood, cereal, rice with pears and apple, dry, instant fortified",
+  "fdcId": "171272",
+  "description": "Milk, dry, nonfat, instant, with added vitamin A and vitamin D",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 389,
-   "protein": 6.6,
-   "fat": 0.9,
-   "saturatedFat": 0.185,
-   "carbs": 88.5,
-   "fiber": 2.6,
-   "sugarTotal": 1.35,
-   "sodium": 2
+   "energyKcal": 358,
+   "protein": 35.1,
+   "fat": 0.72,
+   "saturatedFat": 0.467,
+   "carbs": 52.2,
+   "fiber": 0,
+   "sugarTotal": 52.2,
+   "sodium": 549
   },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #167731 \"Babyfood, cereal, rice with pears and apple, dry, instant fortified\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {
+   "cup": 69.7
+  },
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was milk powder→old record"
  },
  "dry milk": {
-  "fdcId": "167731",
-  "description": "Babyfood, cereal, rice with pears and apple, dry, instant fortified",
+  "fdcId": "171272",
+  "description": "Milk, dry, nonfat, instant, with added vitamin A and vitamin D",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 389,
-   "protein": 6.6,
-   "fat": 0.9,
-   "saturatedFat": 0.185,
-   "carbs": 88.5,
-   "fiber": 2.6,
-   "sugarTotal": 1.35,
-   "sodium": 2
+   "energyKcal": 358,
+   "protein": 35.1,
+   "fat": 0.72,
+   "saturatedFat": 0.467,
+   "carbs": 52.2,
+   "fiber": 0,
+   "sugarTotal": 52.2,
+   "sodium": 549
   },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #167731 \"Babyfood, cereal, rice with pears and apple, dry, instant fortified\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "unitGrams": {
+   "cup": 69.7
+  },
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was milk powder→old record"
  },
  "milk solids without sugar": {
-  "fdcId": "167731",
-  "description": "Babyfood, cereal, rice with pears and apple, dry, instant fortified",
+  "fdcId": "171272",
+  "description": "Milk, dry, nonfat, instant, with added vitamin A and vitamin D",
   "dataType": "SR Legacy",
   "per100g": {
-   "energyKcal": 389,
-   "protein": 6.6,
-   "fat": 0.9,
-   "saturatedFat": 0.185,
-   "carbs": 88.5,
-   "fiber": 2.6,
-   "sugarTotal": 1.35,
-   "sodium": 2
-  },
-  "unitGrams": {},
-  "sourceNote": "USDA FDC #167731 \"Babyfood, cereal, rice with pears and apple, dry, instant fortified\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
- },
- "khoya": {
-  "fdcId": "170873",
-  "description": "Milk, lowfat, fluid, 1% milkfat, with added nonfat milk solids, vitamin A and vitamin D",
-  "dataType": "SR Legacy",
-  "per100g": {
-   "energyKcal": 43,
-   "protein": 3.48,
-   "fat": 0.97,
-   "saturatedFat": 0.604,
-   "carbs": 4.97,
+   "energyKcal": 358,
+   "protein": 35.1,
+   "fat": 0.72,
+   "saturatedFat": 0.467,
+   "carbs": 52.2,
    "fiber": 0,
-   "sodium": 52
+   "sugarTotal": 52.2,
+   "sodium": 549
   },
   "unitGrams": {
-   "cup": 245
+   "cup": 69.7
   },
-  "sourceNote": "USDA FDC #170873 \"Milk, lowfat, fluid, 1% milkfat, with added nonfat milk solids, vitamin A and vitamin D\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
- },
- "mawa": {
-  "fdcId": "170873",
-  "description": "Milk, lowfat, fluid, 1% milkfat, with added nonfat milk solids, vitamin A and vitamin D",
-  "dataType": "SR Legacy",
-  "per100g": {
-   "energyKcal": 43,
-   "protein": 3.48,
-   "fat": 0.97,
-   "saturatedFat": 0.604,
-   "carbs": 4.97,
-   "fiber": 0,
-   "sodium": 52
-  },
-  "unitGrams": {
-   "cup": 245
-  },
-  "sourceNote": "USDA FDC #170873 \"Milk, lowfat, fluid, 1% milkfat, with added nonfat milk solids, vitamin A and vitamin D\" (SR Legacy); nutrients + foodPortions fetched live by scripts/build-fdc-aliases.ts on 2026-11-24"
+  "sourceNote": "repinned per RD review 2026-11-25 (migration 0010); was milk powder→old record"
  },
  "buttermilk": {
   "fdcId": "170874",
